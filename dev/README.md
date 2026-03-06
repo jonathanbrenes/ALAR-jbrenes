@@ -154,6 +154,14 @@ ansible-playbook -i inventory dev/collect-vm-info.yml
 
 ## Reference Documents
 
+### ai-workflow.md
+
+**Start here.** Complete AI workflow guide for any agent working on ALAR.
+Covers how ALAR works, repository structure, environment variables, supported
+distros, critical design rules, rescue VM context, reference data locations,
+prompts for common tasks, and how to test changes. This is the single entry
+point document for a new AI session.
+
 ### alar-bootfix-unification.instructions.md
 
 AI workflow instructions for the bootfix unification project. Contains the
@@ -177,14 +185,22 @@ action scripts. Organized by priority and action script.
 ### vm-data-consolidated.json
 
 Raw collected data from 45 Azure VM images in a single JSON file (sanitized).
-Contains the full output of `collect-vm-info.yml` for every host — GRUB configs,
-EFI analysis, BLS entries, fstab, disk layout, kernel/initramfs inventory,
-serial console, Hyper-V modules, sudo permissions, auditd config, and more.
+Generated using `sanitize-results.py` from multiple `results.json` files
+produced by `collect-vm-info.yml` runs across different VM groups and regions.
+
+Contains the full output for every host — GRUB configs, EFI analysis, BLS
+entries, fstab, disk layout, kernel/initramfs inventory, serial console,
+Hyper-V modules, sudo permissions, auditd config, and more.
 
 **Sensitive data removed**: Azure subscription IDs, resource IDs, VM IDs,
 resource group names, public SSH keys, internal DNS domain names, blkid UUIDs,
 and mtab entries have been sanitized. IMDS data is limited to
 publisher/offer/sku/osType/vmSize/location.
+
+To regenerate from new collection runs:
+```bash
+python dev/sanitize-results.py results1.json results2.json -o dev/vm-data-consolidated.json
+```
 
 Use this file as context for any AI agent that needs to understand the actual
 system configuration details of specific Azure VM images across all ALAR actions.

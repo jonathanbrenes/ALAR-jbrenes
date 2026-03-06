@@ -2,22 +2,10 @@
 
 ## Project Context
 
-**Repository**: ALAR (Azure Linux Auto Recover)  
-**Purpose**: Recover non-bootable Azure Linux VMs by running predefined repair actions inside a chroot environment  
+**Repository**: ALAR (Azure Linux Auto Recover)
 
-### How ALAR Works (Architecture Overview)
-
-1. The ALAR binary detects the distro, mounts partitions, prepares a chroot, and then runs shell action scripts.
-2. Action scripts live in `src/action_implementation/` and are deployed to `/tmp/action_implementation/` at runtime.
-3. The binary executes each action as: `chroot /srv/rescue-root/ /bin/bash -c /tmp/action_implementation/{action_name}-impl.sh`.
-4. **Environment variables** are set before scripts run:
-   - `isRedHat`, `isUbuntu`, `isSuse`, `isAzureLinux`, `isDebian` — boolean strings
-   - `DISTRONAME`, `DISTROVERSION`, `DISTROSUBTYPE`
-   - `RECOVER_DISK_PATH`, `efi_part_path`, `boot_part_path`
-   - `EFI_PARTITION`, `BOOT_PARTITION`, `OS_PARTITION`
-   - `isLVM`
-5. **Architecture** is NOT currently exported as an environment variable — scripts must detect it via `uname -m`.
-6. **Supported distros**: RedHat (RHEL, CentOS, Alma, Rocky, Oracle), Ubuntu, Debian, SUSE (SLES), AzureLinux (Mariner).
+For how ALAR works, environment variables, supported distros, and design rules,
+see `dev/ai-workflow.md`. This document focuses on the bootfix unification project.
 
 ---
 
@@ -357,33 +345,15 @@ is_bls_enabled() {
 
 ## arm64 (aarch64) Specifics for Azure
 
-### Key Differences from x86_64
+For the complete arm64 reference tables (package names, EFI binary names,
+serial console TTY, Hyper-V driver status), see `dev/vm-reference-data.md`.
 
-| Aspect | x86_64 | aarch64 |
-|---|---|---|
-| Boot mode | BIOS (Gen1) or EFI (Gen2) | EFI only (always Gen2) |
-| GRUB install target | `i386-pc` or `x86_64-efi` | `arm64-efi` |
-| GRUB EFI binary | `grubx64.efi` | `grubaa64.efi` |
-| Shim binary | `shimx64.efi` | `shimaa64.efi` |
-| RedHat packages | `grub2-efi-x64`, `shim-x64` | `grub2-efi-aa64`, `shim-aa64` |
-| SUSE packages | `grub2-x86_64-efi` | `grub2-arm64-efi` |
-| Ubuntu packages | `grub-efi-amd64` | `grub-efi-arm64` |
-| Kernel image name | `vmlinuz-*` | `vmlinuz-*` (same on most Azure images) |
-| Hyper-V drivers | Modules: `hv_vmbus`, `hv_storvsc`, `hv_netvsc` | Built into kernel (no module loading needed) |
-
-### grub-install Commands
-
-```bash
-# x86_64 BIOS
-grub2-install --target i386-pc "$RECOVER_DISK_PATH"
-
-# x86_64 EFI
-grub-install --target=x86_64-efi --efi-directory=/boot/efi "$device"
-
-# aarch64 EFI (grub-install is typically not needed; reinstalling packages is sufficient)
-# If needed:
-grub-install --target=arm64-efi --efi-directory=/boot/efi
-```
+Key points for bootfix implementation:
+- arm64 is **always EFI** — no BIOS mode exists in Azure for aarch64
+- Use `uname -m` to detect architecture — returns `aarch64`
+- GRUB target: `arm64-efi`
+- Serial console: `ttyAMA0` (not `ttyS0`)
+- Hyper-V drivers are built into arm64 kernels — skip `--add-drivers`
 
 ---
 
@@ -464,13 +434,15 @@ grub-install --target=arm64-efi --efi-directory=/boot/efi
 
 ## Known Bugs To Fix During Implementation
 
-1. **grubfix-impl.sh** `recover_ubuntu()`: `resolve-pre` → `resolv-pre`
-2. **grubfix-impl.sh** `recover_suse()`: `"{$RECOVER_DISK_PATH}"` → `"${RECOVER_DISK_PATH}"`
-3. **efifix-impl.sh** `resolv-after()`: `resolve.conf` → `resolv.conf`
-4. **efifix-impl.sh** `recover_ubuntu()`: `resolve-pre` → `resolv-pre` (function undefined)
-5. **efifix-impl.sh** `recover_ubuntu()`: uses `$new_efi_uuid` but variable name is `$new_uuid`
-6. **efifix-impl.sh** `recover_ubuntu()`: missing EFI partition existence check
-7. **Missing `GRUB_DISABLE_OS_PROBER=true`** in: grubfix SUSE, grubfix Ubuntu, grubfix AzureLinux, efifix SUSE, efifix Ubuntu, efifix AzureLinux, initrd ALL distros, kernel SUSE/Ubuntu/AzureLinux
+See `dev/backlog.md` for the complete tracked list. The bugs addressed by this
+bootfix unification are items 1-3 (Critical) and 4-7 (High Priority):
+- Item 1: Unify grubfix + efifix into bootfix
+- Item 2: Missing `GRUB_DISABLE_OS_PROBER=true` across multiple scripts
+- Item 3: Multiple typos in grubfix/efifix causing failures
+- Item 4: No arm64 support in boot-related scripts
+- Item 5: No BLS handling
+- Item 6: EFI grub.cfg written as full standalone instead of redirect shim
+- Item 7: SUSE uses `source` not `configfile` in EFI grub.cfg
 
 ---
 
@@ -484,9 +456,12 @@ grub-install --target=arm64-efi --efi-directory=/boot/efi
 
 ---
 
-## Findings From Real VM Data (23 hosts collected)
+## Findings From Real VM Data (45 hosts collected)
 
-These findings were extracted from actual Azure VMs and MUST inform the implementation.
+These findings were extracted from 45 actual Azure VMs across 3 regions,
+covering RHEL 7-10, Debian 11-13, Ubuntu 24.04, SLES 12-16, and arm64 variants.
+Full raw data is available in `dev/vm-data-consolidated.json`.
+These findings MUST inform the implementation.
 
 ### 1. SUSE uses `source` not `configfile` in EFI grub.cfg
 All SUSE images (SLES 15 SP6, SP7, 16, SAP) use `source "${prefix}/grub.cfg"` instead of `configfile`. The bootfix must NOT force a `configfile`-based redirect on SUSE — it must use `source` to match the distro's native pattern.
