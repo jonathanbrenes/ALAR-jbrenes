@@ -1,0 +1,830 @@
+---
+# =============================================================================
+# ALAR VM Information Collector Playbook
+# Run: ansible-playbook -i inventory collect-vm-info.yml
+# Output: /var/www/html/results.json (single JSON file with all hosts)
+# =============================================================================
+- name: Collect boot process details from Azure VMs
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    # ─── 1. IDENTITY ─────────────────────────────────────────────────────────
+    - name: Get hostname
+      command: hostname
+      register: r_hostname
+      changed_when: false
+
+    - name: Get date
+      command: date -u +%Y-%m-%dT%H:%M:%SZ
+      register: r_date
+      changed_when: false
+
+    - name: Get architecture
+      command: uname -m
+      register: r_arch
+      changed_when: false
+
+    - name: Get kernel version
+      command: uname -r
+      register: r_kernel
+      changed_when: false
+
+    - name: Get os-release
+      command: cat /etc/os-release
+      register: r_os_release
+      changed_when: false
+
+    # ─── 2. IMDS (Azure Instance Metadata) ───────────────────────────────────
+    - name: Query IMDS compute metadata
+      shell: >
+        curl -s -H "Metadata:true" --noproxy "*"
+        "http://169.254.169.254/metadata/instance/compute?api-version=2021-02-01"
+      register: r_imds_compute
+      changed_when: false
+      failed_when: false
+
+    - name: Query IMDS image reference
+      shell: >
+        curl -s -H "Metadata:true" --noproxy "*"
+        "http://169.254.169.254/metadata/instance/compute/storageProfile/imageReference?api-version=2021-02-01"
+      register: r_imds_image
+      changed_when: false
+      failed_when: false
+
+    # ─── 3. BOOT MODE ────────────────────────────────────────────────────────
+    - name: Check if EFI firmware directory exists
+      stat:
+        path: /sys/firmware/efi
+      register: r_efi_dir
+
+    - name: Get secure boot state
+      command: mokutil --sb-state
+      register: r_secureboot
+      changed_when: false
+      failed_when: false
+
+    # ─── 4. DISK & PARTITION LAYOUT ──────────────────────────────────────────
+    - name: Get block device list
+      command: lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINT,UUID,PARTTYPE
+      register: r_lsblk
+      changed_when: false
+      failed_when: false
+
+    - name: Get root disk device name
+      shell: lsblk -ndo PKNAME "$(findmnt -n -o SOURCE /)"
+      register: r_root_disk
+      changed_when: false
+      failed_when: false
+
+    - name: Get partition table of root disk
+      shell: sgdisk -p "/dev/{{ r_root_disk.stdout | trim }}"
+      register: r_sgdisk
+      changed_when: false
+      failed_when: false
+      when: r_root_disk.stdout | trim | length > 0
+
+    - name: Check NVMe presence
+      shell: ls /sys/class/nvme/nvme* 2>/dev/null && echo "yes" || echo "no"
+      register: r_nvme
+      changed_when: false
+      failed_when: false
+
+    - name: Count SCSI hosts
+      shell: ls /sys/class/scsi_host/ 2>/dev/null | wc -l
+      register: r_scsi_hosts
+      changed_when: false
+      failed_when: false
+
+    # ─── 5. LVM ──────────────────────────────────────────────────────────────
+    - name: Get PVs
+      command: pvs
+      register: r_pvs
+      changed_when: false
+      failed_when: false
+
+    - name: Get VGs
+      command: vgs
+      register: r_vgs
+      changed_when: false
+      failed_when: false
+
+    - name: Get LVs
+      command: lvs
+      register: r_lvs
+      changed_when: false
+      failed_when: false
+
+    # ─── 6. MOUNT POINTS ─────────────────────────────────────────────────────
+    - name: Get real mount points
+      command: findmnt -t ext4,xfs,btrfs,vfat,ext2,ext3 --real
+      register: r_mounts
+      changed_when: false
+      failed_when: false
+
+    - name: Get EFI mount details
+      shell: |
+        if findmnt /boot/efi &>/dev/null; then
+          echo "mount: $(findmnt -n /boot/efi)"
+          echo "fs: $(findmnt -n -o FSTYPE /boot/efi)"
+          echo "source: $(findmnt -n -o SOURCE /boot/efi)"
+          echo "uuid: $(blkid -s UUID -o value "$(findmnt -n -o SOURCE /boot/efi)")"
+        else
+          echo "efi_mount: none"
+        fi
+      register: r_efi_mount
+      changed_when: false
+      failed_when: false
+
+    - name: Get boot mount details
+      shell: |
+        if findmnt /boot &>/dev/null; then
+          echo "mount: $(findmnt -n /boot)"
+          echo "fs: $(findmnt -n -o FSTYPE /boot)"
+          echo "source: $(findmnt -n -o SOURCE /boot)"
+          echo "uuid: $(blkid -s UUID -o value "$(findmnt -n -o SOURCE /boot)")"
+        else
+          echo "boot_mount: none (boot on root)"
+        fi
+      register: r_boot_mount
+      changed_when: false
+      failed_when: false
+
+    # ─── 7. FSTAB ────────────────────────────────────────────────────────────
+    - name: Get fstab contents
+      command: cat /etc/fstab
+      register: r_fstab
+      changed_when: false
+
+    # ─── 8. GRUB PACKAGES ────────────────────────────────────────────────────
+    - name: Get GRUB/shim packages (rpm)
+      shell: rpm -qa | grep -iE "grub|shim" | sort
+      register: r_grub_pkgs_rpm
+      changed_when: false
+      failed_when: false
+
+    - name: Get GRUB/shim packages (dpkg)
+      shell: dpkg -l 2>/dev/null | grep -iE "grub|shim" | awk '{print $2, $3}'
+      register: r_grub_pkgs_dpkg
+      changed_when: false
+      failed_when: false
+
+    # ─── 9. GRUB BINARIES ────────────────────────────────────────────────────
+    - name: Check GRUB binaries availability
+      shell: |
+        for cmd in grub2-install grub-install grub2-mkconfig grub-mkconfig update-grub grubby; do
+          if command -v "$cmd" &>/dev/null; then
+            echo "$cmd: $(command -v "$cmd") ($($cmd --version 2>/dev/null || echo 'no version'))"
+          else
+            echo "$cmd: not found"
+          fi
+        done
+      register: r_grub_binaries
+      changed_when: false
+      failed_when: false
+
+    # ─── 10. OS-PROBER ───────────────────────────────────────────────────────
+    - name: Check os-prober
+      shell: |
+        if command -v os-prober &>/dev/null; then
+          echo "installed: $(command -v os-prober)"
+          rpm -q os-prober 2>/dev/null || dpkg -l os-prober 2>/dev/null || true
+        else
+          echo "not installed"
+        fi
+      register: r_osprober
+      changed_when: false
+      failed_when: false
+
+    # ─── 11. GRUB DEFAULT CONFIG ─────────────────────────────────────────────
+    - name: Get /etc/default/grub
+      command: cat /etc/default/grub
+      register: r_default_grub
+      changed_when: false
+      failed_when: false
+
+    - name: List /etc/default/grub.d/
+      shell: ls -la /etc/default/grub.d/ 2>/dev/null || echo "NOT FOUND"
+      register: r_grubd_list
+      changed_when: false
+      failed_when: false
+
+    - name: Get /etc/default/grub.d/ file contents
+      shell: |
+        if [ -d /etc/default/grub.d ]; then
+          for f in /etc/default/grub.d/*; do
+            [ -f "$f" ] || continue
+            echo "--- $f ---"
+            cat "$f"
+            echo
+          done
+        else
+          echo "NOT FOUND"
+        fi
+      register: r_grubd_contents
+      changed_when: false
+      failed_when: false
+
+    # ─── 12. GRUB.CFG FILES ─────────────────────────────────────────────────
+    - name: Locate and inspect grub.cfg files
+      shell: |
+        for f in /boot/grub2/grub.cfg /boot/grub/grub.cfg /boot/efi/EFI/*/grub.cfg; do
+          [ -f "$f" ] || continue
+          echo "FOUND: $f ($(stat -c '%s bytes, %y' "$f"))"
+          echo "  sha256: $(sha256sum "$f" | awk '{print $1}')"
+          echo "  lines: $(wc -l < "$f")"
+          if grep -q "blscfg" "$f" 2>/dev/null; then
+            echo "  type: BLS shim"
+          elif head -20 "$f" | grep -q "BEGIN.*grub-mkconfig\|BEGIN.*grub2-mkconfig" 2>/dev/null; then
+            echo "  type: full generated grub.cfg"
+          else
+            echo "  type: custom/manual"
+          fi
+          echo "  first_30_lines:"
+          head -30 "$f" | sed 's/^/    /'
+          echo
+        done
+      register: r_grubcfg
+      changed_when: false
+      failed_when: false
+
+    # ─── 12b. EFI grub.cfg redirect vs standalone check ──────────────────────
+    - name: Analyze EFI grub.cfg relationship to boot grub.cfg
+      shell: |
+        # Identify the main grub.cfg on the boot filesystem
+        BOOT_GRUBCFG=""
+        if [ -f /boot/grub2/grub.cfg ]; then
+          BOOT_GRUBCFG="/boot/grub2/grub.cfg"
+        elif [ -f /boot/grub/grub.cfg ]; then
+          BOOT_GRUBCFG="/boot/grub/grub.cfg"
+        fi
+
+        # Find all EFI grub.cfg files
+        EFI_GRUBCFGS=$(find /boot/efi/EFI -name grub.cfg 2>/dev/null)
+
+        if [ -z "$EFI_GRUBCFGS" ]; then
+          echo "efi_grubcfg_found: false"
+          echo "status: no_efi_grubcfg"
+          exit 0
+        fi
+
+        for efi_cfg in $EFI_GRUBCFGS; do
+          echo "--- $efi_cfg ---"
+          LINE_COUNT=$(wc -l < "$efi_cfg")
+          echo "line_count: $LINE_COUNT"
+
+          # Check if it's a redirect/shim (small file with configfile/source or search+prefix)
+          HAS_CONFIGFILE=$(grep -c 'configfile' "$efi_cfg" 2>/dev/null || echo 0)
+          HAS_SOURCE=$(grep -c 'source ' "$efi_cfg" 2>/dev/null || echo 0)
+          HAS_SEARCH=$(grep -c 'search' "$efi_cfg" 2>/dev/null || echo 0)
+          HAS_SET_PREFIX=$(grep -c 'set prefix=' "$efi_cfg" 2>/dev/null || echo 0)
+          HAS_BLSCFG=$(grep -c 'blscfg' "$efi_cfg" 2>/dev/null || echo 0)
+          HAS_MENUENTRY=$(grep -c 'menuentry' "$efi_cfg" 2>/dev/null || echo 0)
+          HAS_MKCONFIG=$(grep -c 'BEGIN.*grub-mkconfig\|BEGIN.*grub2-mkconfig' "$efi_cfg" 2>/dev/null || echo 0)
+
+          echo "has_configfile: $HAS_CONFIGFILE"
+          echo "has_source: $HAS_SOURCE"
+          echo "has_search_uuid: $HAS_SEARCH"
+          echo "has_set_prefix: $HAS_SET_PREFIX"
+          echo "has_blscfg: $HAS_BLSCFG"
+          echo "has_menuentry: $HAS_MENUENTRY"
+          echo "has_mkconfig_markers: $HAS_MKCONFIG"
+
+          # Classify the EFI grub.cfg
+          if [ "$LINE_COUNT" -le 10 ] && [ "$HAS_CONFIGFILE" -gt 0 ]; then
+            echo "type: redirect_shim"
+            echo "redirect_method: configfile"
+            echo "status: healthy"
+          elif [ "$LINE_COUNT" -le 10 ] && [ "$HAS_SOURCE" -gt 0 ]; then
+            echo "type: redirect_shim"
+            echo "redirect_method: source"
+            echo "status: healthy"
+          elif [ "$HAS_BLSCFG" -gt 0 ] && [ "$HAS_MENUENTRY" -eq 0 ]; then
+            echo "type: bls_shim"
+            echo "status: healthy"
+          elif [ "$HAS_MKCONFIG_MARKERS" -gt 0 ] || [ "$HAS_MENUENTRY" -gt 5 ]; then
+            echo "type: full_standalone"
+            # Check if boot grub.cfg also exists -> diverged
+            if [ -n "$BOOT_GRUBCFG" ] && [ -f "$BOOT_GRUBCFG" ]; then
+              BOOT_HASH=$(sha256sum "$BOOT_GRUBCFG" 2>/dev/null | awk '{print $1}')
+              EFI_HASH=$(sha256sum "$efi_cfg" 2>/dev/null | awk '{print $1}')
+              echo "boot_grubcfg: $BOOT_GRUBCFG"
+              echo "boot_grubcfg_hash: $BOOT_HASH"
+              echo "efi_grubcfg_hash: $EFI_HASH"
+              if [ "$BOOT_HASH" = "$EFI_HASH" ]; then
+                echo "status: full_standalone_identical"
+              else
+                echo "status: DIVERGED"
+                echo "warning: EFI and boot grub.cfg are different full configs"
+              fi
+            else
+              echo "status: full_standalone_only_efi"
+            fi
+          else
+            echo "type: unknown"
+            echo "status: needs_review"
+          fi
+
+          echo "full_content:"
+          cat "$efi_cfg" | sed 's/^/  /'
+          echo
+        done
+      register: r_efi_grubcfg_analysis
+      changed_when: false
+      failed_when: false
+
+    # ─── 13. BLS ─────────────────────────────────────────────────────────────
+    - name: Check BLS in /etc/default/grub
+      shell: grep -q "GRUB_ENABLE_BLSCFG=true" /etc/default/grub 2>/dev/null
+      register: r_bls_grubdefault
+      changed_when: false
+      failed_when: false
+
+    - name: Check BLS blscfg in grub.cfg
+      shell: grep -rl "blscfg" /boot/grub2/grub.cfg /boot/efi/EFI/*/grub.cfg 2>/dev/null || echo "none"
+      register: r_bls_grubcfg
+      changed_when: false
+      failed_when: false
+
+    - name: List /boot/loader tree
+      shell: find /boot/loader -type f 2>/dev/null | head -30 || echo "NOT FOUND"
+      register: r_boot_loader_tree
+      changed_when: false
+      failed_when: false
+
+    - name: Get BLS entries
+      shell: |
+        if [ -d /boot/loader/entries ]; then
+          for entry in /boot/loader/entries/*.conf; do
+            [ -f "$entry" ] || continue
+            echo "--- $(basename "$entry") ---"
+            cat "$entry"
+            echo
+          done
+        else
+          echo "NOT FOUND"
+        fi
+      register: r_bls_entries
+      changed_when: false
+      failed_when: false
+
+    # ─── 14. EFI DIRECTORY STRUCTURE ─────────────────────────────────────────
+    - name: List EFI directory tree
+      shell: find /boot/efi -type f 2>/dev/null | head -50 || echo "NOT FOUND"
+      register: r_efi_tree
+      changed_when: false
+      failed_when: false
+
+    - name: List EFI vendor dirs
+      shell: ls -la /boot/efi/EFI/ 2>/dev/null || echo "NOT FOUND"
+      register: r_efi_vendors
+      changed_when: false
+      failed_when: false
+
+    - name: List EFI binaries
+      shell: find /boot/efi -name "*.efi" -exec ls -la {} \; 2>/dev/null || echo "none"
+      register: r_efi_binaries
+      changed_when: false
+      failed_when: false
+
+    # ─── 15. KERNEL & INITRAMFS ──────────────────────────────────────────────
+    - name: List kernel files in /boot
+      shell: ls -la /boot/vmlinuz* /boot/Image* /boot/kernel* 2>/dev/null || echo "none"
+      register: r_kernels
+      changed_when: false
+      failed_when: false
+
+    - name: List initramfs/initrd files in /boot
+      shell: ls -la /boot/initramfs* /boot/initrd* 2>/dev/null || echo "none"
+      register: r_initramfs
+      changed_when: false
+      failed_when: false
+
+    - name: List symlinks in /boot
+      shell: find /boot -maxdepth 1 -type l -exec ls -la {} \; 2>/dev/null || echo "none"
+      register: r_boot_symlinks
+      changed_when: false
+      failed_when: false
+
+    - name: List kernel module directories
+      shell: ls -d /lib/modules/*/ 2>/dev/null | head -5
+      register: r_modules_dirs
+      changed_when: false
+      failed_when: false
+
+    # ─── 16. DRACUT / INITRAMFS-TOOLS ────────────────────────────────────────
+    - name: Get dracut info
+      shell: |
+        if command -v dracut &>/dev/null; then
+          echo "installed: $(dracut --version 2>/dev/null || echo 'version unknown')"
+          if [ -f /etc/dracut.conf ]; then
+            echo "--- /etc/dracut.conf ---"
+            cat /etc/dracut.conf
+          fi
+          if [ -d /etc/dracut.conf.d ]; then
+            echo "--- /etc/dracut.conf.d/ ---"
+            ls -la /etc/dracut.conf.d/
+            for f in /etc/dracut.conf.d/*.conf; do
+              [ -f "$f" ] || continue
+              echo "--- $f ---"
+              cat "$f"
+            done
+          fi
+        else
+          echo "not installed"
+        fi
+      register: r_dracut
+      changed_when: false
+      failed_when: false
+
+    - name: Get initramfs-tools info
+      shell: |
+        if command -v update-initramfs &>/dev/null; then
+          echo "installed: yes"
+          [ -f /etc/initramfs-tools/initramfs.conf ] && cat /etc/initramfs-tools/initramfs.conf
+          [ -f /etc/initramfs-tools/modules ] && echo "--- modules ---" && cat /etc/initramfs-tools/modules
+        else
+          echo "not installed"
+        fi
+      register: r_initramfs_tools
+      changed_when: false
+      failed_when: false
+
+    # ─── 17. SECURE BOOT & SHIM ─────────────────────────────────────────────
+    - name: Find shim binaries
+      shell: find /boot/efi -name "shim*" -o -name "SHIM*" 2>/dev/null || echo "none"
+      register: r_shim_binaries
+      changed_when: false
+      failed_when: false
+
+    # ─── 18. PACKAGE MANAGER ─────────────────────────────────────────────────
+    - name: Detect package managers
+      shell: |
+        for pm in yum dnf tdnf zypper apt-get; do
+          if command -v "$pm" &>/dev/null; then
+            echo "$pm: $(command -v "$pm")"
+          fi
+        done
+      register: r_pkgmgr
+      changed_when: false
+      failed_when: false
+
+    # ─── 19. SERIAL CONSOLE ──────────────────────────────────────────────────
+    - name: Get kernel command line
+      command: cat /proc/cmdline
+      register: r_cmdline
+      changed_when: false
+
+    - name: Check console TTY devices
+      shell: |
+        for tty in ttyS0 ttyS1 ttyAMA0 hvc0; do
+          if [ -d "/sys/class/tty/$tty" ]; then
+            echo "$tty: present"
+          fi
+        done
+      register: r_tty_devices
+      changed_when: false
+      failed_when: false
+
+    - name: List serial getty units
+      shell: systemctl list-units --type=service 2>/dev/null | grep -iE "getty|serial" || echo "none"
+      register: r_getty
+      changed_when: false
+      failed_when: false
+
+    # ─── 20. HYPER-V MODULES ─────────────────────────────────────────────────
+    - name: List loaded Hyper-V modules
+      shell: lsmod | grep -iE "hv_|hyperv" || echo "none loaded"
+      register: r_hv_loaded
+      changed_when: false
+      failed_when: false
+
+    - name: Check Hyper-V module type (loadable vs built-in)
+      shell: |
+        KVER=$(uname -r)
+        for mod in hv_vmbus hv_storvsc hv_netvsc; do
+          MODPATH=$(find /lib/modules/"$KVER" -name "${mod}.ko*" 2>/dev/null | head -1)
+          if [ -n "$MODPATH" ]; then
+            echo "$mod: module ($MODPATH)"
+          elif grep -q "$mod" /lib/modules/"$KVER"/modules.builtin 2>/dev/null; then
+            echo "$mod: built-in"
+          else
+            echo "$mod: NOT FOUND"
+          fi
+        done
+      register: r_hv_modules
+      changed_when: false
+      failed_when: false
+
+    # ─── 21. RESOLV.CONF ─────────────────────────────────────────────────────
+    - name: Get resolv.conf details
+      shell: |
+        ls -la /etc/resolv.conf
+        file /etc/resolv.conf
+        cat /etc/resolv.conf
+      register: r_resolv
+      changed_when: false
+      failed_when: false
+
+    # ═════════════════════════════════════════════════════════════════════════
+    # ADDITIONAL DATA FOR OTHER ALAR ACTIONS
+    # ═════════════════════════════════════════════════════════════════════════
+
+    # ─── 22. FSTAB ACTION: UUID/device mapping, mtab ─────────────────────────
+    - name: Get blkid (all block device UUIDs)
+      command: blkid
+      register: r_blkid
+      changed_when: false
+      failed_when: false
+
+    - name: Get mtab (current mounts)
+      command: cat /etc/mtab
+      register: r_mtab
+      changed_when: false
+      failed_when: false
+
+    - name: Check for resource disk in fstab
+      shell: grep -E "azure_resource|ephemeral|LABEL=BEK" /etc/fstab 2>/dev/null || echo "none"
+      register: r_resource_disk
+      changed_when: false
+      failed_when: false
+
+    - name: Get LVM logical volume details (for fstab rebuild)
+      shell: |
+        if command -v lvs &>/dev/null; then
+          lvs -o lv_name,vg_name,lv_path,lv_size --noheadings 2>/dev/null || echo "no LVs"
+        else
+          echo "lvm not installed"
+        fi
+      register: r_lv_details
+      changed_when: false
+      failed_when: false
+
+    # ─── 23. KERNEL ACTION: default boot kernel, grubby ───────────────────
+    - name: Get default boot kernel (grubby)
+      shell: grubby --default-kernel 2>/dev/null || echo "grubby not available"
+      register: r_default_kernel
+      changed_when: false
+      failed_when: false
+
+    - name: Get GRUB_DEFAULT value
+      shell: grep '^GRUB_DEFAULT=' /etc/default/grub 2>/dev/null || echo "not set"
+      register: r_grub_default_entry
+      changed_when: false
+      failed_when: false
+
+    # ─── 24. INITRD ACTION: dracut-hyperv, module deps ──────────────────────
+    - name: Check dracut-hyperv package
+      shell: |
+        rpm -q dracut-hyperv 2>/dev/null || \
+        rpm -q dracut-modules-hyperv 2>/dev/null || \
+        dpkg -l hyperv-daemons 2>/dev/null | grep ^ii || \
+        echo "not found"
+      register: r_dracut_hyperv
+      changed_when: false
+      failed_when: false
+
+    - name: Get depmod status for running kernel
+      shell: depmod -n $(uname -r) 2>/dev/null | head -5 || echo "depmod not available"
+      register: r_depmod
+      changed_when: false
+      failed_when: false
+
+    # ─── 25. AUDITD ACTION: config, disk space, rules ───────────────────────
+    - name: Get auditd config
+      shell: cat /etc/audit/auditd.conf 2>/dev/null || echo "not found"
+      register: r_auditd_conf
+      changed_when: false
+      failed_when: false
+
+    - name: Check auditd HALT/SUSPEND rules
+      shell: grep -iE "HALT|SUSPEND" /etc/audit/auditd.conf 2>/dev/null || echo "none"
+      register: r_auditd_halt
+      changed_when: false
+      failed_when: false
+
+    - name: Get disk usage (df)
+      command: df -h
+      register: r_df
+      changed_when: false
+      failed_when: false
+
+    - name: Get LVM VG free space
+      shell: vgs -o vg_name,vg_free --noheadings --units m 2>/dev/null || echo "no VGs"
+      register: r_vg_free
+      changed_when: false
+      failed_when: false
+
+    # ─── 26. SUDO ACTION: sudoers perms, ownership, setuid ──────────────────
+    - name: Get sudoers file permissions and ownership
+      shell: |
+        echo "--- /etc/sudoers ---"
+        stat -c "%a %U:%G %n" /etc/sudoers 2>/dev/null || echo "not found"
+        echo "--- /etc/sudoers.d/ ---"
+        for f in /etc/sudoers.d/*; do
+          [ -f "$f" ] || continue
+          stat -c "%a %U:%G %n" "$f"
+        done
+      register: r_sudoers_perms
+      changed_when: false
+      failed_when: false
+
+    - name: Check sudo binary setuid bits
+      shell: |
+        SUDO_BIN=$(find /usr/bin /bin /usr/sbin /sbin -maxdepth 1 -name sudo -type f 2>/dev/null | head -1)
+        if [ -n "$SUDO_BIN" ]; then
+          stat -c "%a %U:%G %n" "$SUDO_BIN"
+        else
+          echo "sudo not found"
+        fi
+      register: r_sudo_bits
+      changed_when: false
+      failed_when: false
+
+    - name: Check /etc directory ownership and permissions
+      shell: stat -c "%a %U:%G %n" /etc
+      register: r_etc_perms
+      changed_when: false
+      failed_when: false
+
+    - name: Check for targetpw in sudoers
+      shell: grep -n "targetpw" /etc/sudoers 2>/dev/null || echo "not found"
+      register: r_targetpw
+      changed_when: false
+      failed_when: false
+
+    - name: Check for duplicate sudo users across sudoers files
+      shell: |
+        users=""
+        for file in /etc/sudoers /etc/sudoers.d/*; do
+          [ -f "$file" ] || continue
+          grep -E "^[A-Za-z0-9._%-]+\s+ALL" "$file" 2>/dev/null | awk '{print $1}' | while read u; do
+            echo "$u $file"
+          done
+        done | sort | awk '{print $1}' | uniq -d
+      register: r_sudoers_dupes
+      changed_when: false
+      failed_when: false
+
+    - name: Get waagent sudoers file if present
+      shell: cat /etc/sudoers.d/waagent 2>/dev/null || echo "not found"
+      register: r_waagent_sudoers
+      changed_when: false
+      failed_when: false
+
+    # ─── 27. GENERAL: cloud-init, waagent ────────────────────────────────────
+    - name: Get waagent version and config highlights
+      shell: |
+        waagent --version 2>/dev/null || echo "waagent not found"
+        echo "---"
+        grep -E "^(Provisioning|ResourceDisk|AutoUpdate)" /etc/waagent.conf 2>/dev/null || echo "no config"
+      register: r_waagent
+      changed_when: false
+      failed_when: false
+
+    - name: Get cloud-init version
+      shell: cloud-init --version 2>/dev/null || echo "not installed"
+      register: r_cloudinit
+      changed_when: false
+      failed_when: false
+
+    # ═════════════════════════════════════════════════════════════════════════
+    # BUILD PER-HOST JSON FACT
+    # ═════════════════════════════════════════════════════════════════════════
+    - name: Build host boot info dictionary
+      set_fact:
+        host_boot_info:
+          identity:
+            hostname: "{{ r_hostname.stdout }}"
+            collected_at: "{{ r_date.stdout }}"
+            arch: "{{ r_arch.stdout }}"
+            kernel: "{{ r_kernel.stdout }}"
+            os_release: "{{ r_os_release.stdout_lines }}"
+          imds:
+            compute: "{{ r_imds_compute.stdout | default('{}') | from_json }}"
+            image_reference: "{{ r_imds_image.stdout | default('{}') | from_json }}"
+          boot_mode:
+            mode: "{{ 'efi' if r_efi_dir.stat.exists else 'bios' }}"
+            secure_boot: "{{ r_secureboot.stdout | default('unknown') }}"
+          disk:
+            block_devices: "{{ r_lsblk.stdout_lines | default([]) }}"
+            root_disk: "{{ r_root_disk.stdout | default('unknown') | trim }}"
+            partition_table: "{{ r_sgdisk.stdout_lines | default([]) }}"
+            nvme_present: "{{ r_nvme.stdout | default('unknown') | trim }}"
+            scsi_hosts: "{{ r_scsi_hosts.stdout | default('0') | trim }}"
+          lvm:
+            pvs: "{{ r_pvs.stdout_lines | default([]) }}"
+            vgs: "{{ r_vgs.stdout_lines | default([]) }}"
+            lvs: "{{ r_lvs.stdout_lines | default([]) }}"
+          mounts:
+            filesystems: "{{ r_mounts.stdout_lines | default([]) }}"
+            efi: "{{ r_efi_mount.stdout_lines | default([]) }}"
+            boot: "{{ r_boot_mount.stdout_lines | default([]) }}"
+          fstab: "{{ r_fstab.stdout_lines }}"
+          grub:
+            packages_rpm: "{{ r_grub_pkgs_rpm.stdout_lines | default([]) }}"
+            packages_dpkg: "{{ r_grub_pkgs_dpkg.stdout_lines | default([]) }}"
+            binaries: "{{ r_grub_binaries.stdout_lines | default([]) }}"
+            os_prober: "{{ r_osprober.stdout_lines | default([]) }}"
+            default_grub: "{{ r_default_grub.stdout_lines | default([]) }}"
+            grubd_listing: "{{ r_grubd_list.stdout_lines | default([]) }}"
+            grubd_contents: "{{ r_grubd_contents.stdout_lines | default([]) }}"
+            grub_cfgs: "{{ r_grubcfg.stdout_lines | default([]) }}"
+            efi_grubcfg_analysis: "{{ r_efi_grubcfg_analysis.stdout_lines | default([]) }}"
+          bls:
+            enabled_in_grub_default: "{{ r_bls_grubdefault.rc == 0 }}"
+            blscfg_in_grub_cfg: "{{ r_bls_grubcfg.stdout_lines | default([]) }}"
+            loader_tree: "{{ r_boot_loader_tree.stdout_lines | default([]) }}"
+            entries: "{{ r_bls_entries.stdout_lines | default([]) }}"
+          efi:
+            file_tree: "{{ r_efi_tree.stdout_lines | default([]) }}"
+            vendor_dirs: "{{ r_efi_vendors.stdout_lines | default([]) }}"
+            efi_binaries: "{{ r_efi_binaries.stdout_lines | default([]) }}"
+          kernel:
+            kernel_files: "{{ r_kernels.stdout_lines | default([]) }}"
+            initramfs_files: "{{ r_initramfs.stdout_lines | default([]) }}"
+            boot_symlinks: "{{ r_boot_symlinks.stdout_lines | default([]) }}"
+            module_dirs: "{{ r_modules_dirs.stdout_lines | default([]) }}"
+          initramfs_tooling:
+            dracut: "{{ r_dracut.stdout_lines | default([]) }}"
+            initramfs_tools: "{{ r_initramfs_tools.stdout_lines | default([]) }}"
+          secure_boot:
+            state: "{{ r_secureboot.stdout | default('unknown') }}"
+            shim_binaries: "{{ r_shim_binaries.stdout_lines | default([]) }}"
+          package_manager: "{{ r_pkgmgr.stdout_lines | default([]) }}"
+          serial_console:
+            kernel_cmdline: "{{ r_cmdline.stdout }}"
+            tty_devices: "{{ r_tty_devices.stdout_lines | default([]) }}"
+            getty_units: "{{ r_getty.stdout_lines | default([]) }}"
+          hyperv:
+            loaded_modules: "{{ r_hv_loaded.stdout_lines | default([]) }}"
+            module_types: "{{ r_hv_modules.stdout_lines | default([]) }}"
+          resolv_conf: "{{ r_resolv.stdout_lines | default([]) }}"
+          fstab_detail:
+            blkid: "{{ r_blkid.stdout_lines | default([]) }}"
+            mtab: "{{ r_mtab.stdout_lines | default([]) }}"
+            resource_disk: "{{ r_resource_disk.stdout_lines | default([]) }}"
+            lv_details: "{{ r_lv_details.stdout_lines | default([]) }}"
+          kernel_action:
+            default_kernel: "{{ r_default_kernel.stdout | default('unknown') }}"
+            grub_default: "{{ r_grub_default_entry.stdout | default('not set') }}"
+          initrd_action:
+            dracut_hyperv: "{{ r_dracut_hyperv.stdout_lines | default([]) }}"
+            depmod: "{{ r_depmod.stdout_lines | default([]) }}"
+          auditd_action:
+            config: "{{ r_auditd_conf.stdout_lines | default([]) }}"
+            halt_rules: "{{ r_auditd_halt.stdout_lines | default([]) }}"
+            disk_usage: "{{ r_df.stdout_lines | default([]) }}"
+            vg_free_space: "{{ r_vg_free.stdout_lines | default([]) }}"
+          sudo_action:
+            sudoers_perms: "{{ r_sudoers_perms.stdout_lines | default([]) }}"
+            sudo_bits: "{{ r_sudo_bits.stdout | default('unknown') }}"
+            etc_perms: "{{ r_etc_perms.stdout | default('unknown') }}"
+            targetpw: "{{ r_targetpw.stdout | default('not found') }}"
+            duplicate_users: "{{ r_sudoers_dupes.stdout_lines | default([]) }}"
+            waagent_sudoers: "{{ r_waagent_sudoers.stdout_lines | default([]) }}"
+          azure_agent:
+            waagent: "{{ r_waagent.stdout_lines | default([]) }}"
+            cloud_init: "{{ r_cloudinit.stdout | default('unknown') }}"
+
+# =============================================================================
+# Second play: aggregate all hosts into a single JSON file on localhost
+# =============================================================================
+- name: Write combined JSON report
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: Ensure results directory exists
+      file:
+        path: results
+        state: directory
+
+    - name: Build combined report from all hosts
+      set_fact:
+        combined_report:
+          _meta:
+            generated_at: "{{ lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%SZ') }}"
+            host_count: "{{ groups['all'] | length }}"
+          hosts: >-
+            {{
+              dict(
+                groups['all'] | zip(
+                  groups['all'] | map('extract', hostvars, 'host_boot_info')
+                )
+              )
+            }}
+
+    - name: Ensure /var/www/html directory exists
+      become: true
+      file:
+        path: /var/www/html
+        state: directory
+
+    - name: Write /var/www/html/results.json
+      become: true
+      copy:
+        dest: /var/www/html/results.json
+        content: "{{ combined_report | to_nice_json }}"
