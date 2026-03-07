@@ -456,10 +456,10 @@ bootfix unification are items 1-3 (Critical) and 4-7 (High Priority):
 
 ---
 
-## Findings From Real VM Data (45 hosts collected)
+## Findings From Real VM Data (56 hosts collected)
 
-These findings were extracted from 45 actual Azure VMs across 3 regions,
-covering RHEL 7-10, Debian 11-13, Ubuntu 24.04, SLES 12-16, and arm64 variants.
+These findings were extracted from 56 actual Azure VMs across 3 regions,
+covering RHEL 7-10, AlmaLinux 8-10, Debian 11-13, Ubuntu 24.04, SLES 12-16, and arm64 variants.
 Full raw data is available in `dev/vm-data-consolidated.json`.
 These findings MUST inform the implementation.
 

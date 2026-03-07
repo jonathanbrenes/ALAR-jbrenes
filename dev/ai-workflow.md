@@ -1,7 +1,7 @@
 # ALAR2 — AI Workflow Guide
 
 Use this file as mandatory guidance for any AI session working on ALAR.
-Load `dev/vm-data-consolidated.json` for complete context from 45 Azure VM images.
+Load `dev/vm-data-consolidated.json` for complete context from 56 Azure VM images.
 Known bugs and enhancements are tracked in `dev/backlog.md`.
 
 ### How to load this in a new AI session
@@ -55,7 +55,7 @@ src/action_implementation/   # Shell scripts — the actual recovery logic
   helpers.sh                 # Shared utility functions (backup, checkPerm, etc.)
 dev/                         # Development tools and reference data
   backlog.md                 # ← KNOWN BUGS AND ENHANCEMENTS (16 items)
-  vm-data-consolidated.json  # ← RAW DATA FROM 45 VMs (load for full context)
+  vm-data-consolidated.json  # ← RAW DATA FROM 56 VMs (load for full context)
   vm-reference-data.md       # Extended reference tables
   alar-bootfix-unification.instructions.md  # Bootfix project plan
   collect-vm-info.yml        # Ansible playbook to collect VM data
@@ -91,13 +91,14 @@ Boot mode: use `$efi_part_path` (non-empty = EFI) as primary signal, `/sys/firmw
 
 ---
 
-## Distro Quick Reference (from 45 VMs)
+## Distro Quick Reference (from 56 VMs)
 
 ### GRUB Commands and Paths
 
 | Distro | grub-install | grub-mkconfig | GRUB path | Vendor EFI dir |
 |---|---|---|---|---|
 | RHEL 7-10 | `grub2-install` | `grub2-mkconfig` | `/boot/grub2/` | `redhat` |
+| AlmaLinux 8-10 | `grub2-install` | `grub2-mkconfig` | `/boot/grub2/` | `almalinux` |
 | Debian 11-13 | `grub-install` | `update-grub` | `/boot/grub/` | `debian` |
 | Ubuntu 24.04 | `grub-install` | `update-grub` | `/boot/grub/` | `ubuntu` |
 | SUSE 12-16 | `grub2-install` | `grub2-mkconfig` | `/boot/grub2/` | `BOOT` |
@@ -107,6 +108,7 @@ Boot mode: use `$efi_part_path` (non-empty = EFI) as primary signal, `/sys/firmw
 | Distro | Method | Note |
 |---|---|---|
 | RHEL 8+ | `configfile` | Redirect shim to `/boot/grub2/grub.cfg` |
+| AlmaLinux 8-10 | `configfile` | Same as RHEL 8+ (vendor dir is `almalinux`) |
 | RHEL 7.x | Full standalone | **DIVERGED** — two different full configs |
 | Debian/Ubuntu | `configfile` | Redirect shim to `/boot/grub/grub.cfg` |
 | SUSE 15+ | `source` | **NOT configfile** — must use `source` for SUSE |
@@ -118,6 +120,7 @@ Boot mode: use `$efi_part_path` (non-empty = EFI) as primary signal, `/sys/firmw
 |---|---|---|---|---|
 | RHEL 7 | No | `grub2-efi-x64 shim-x64` | N/A | `ttyS0` |
 | RHEL 8-10 | Yes | `grub2-efi-x64 shim-x64` | `grub2-efi-aa64 shim-aa64` | `ttyS0` / `ttyAMA0` |
+| AlmaLinux 8-10 | Yes | `grub2-efi-x64 shim-x64` | `grub2-efi-aa64 shim-aa64` | `ttyS0` / `ttyAMA0` |
 | Debian | No | `grub-efi-amd64-signed` | `grub-efi-arm64-signed` | `ttyS0` / `ttyAMA0` |
 | Ubuntu | No | `grub-efi-amd64-signed shim-signed` | `grub-efi-arm64-signed shim-signed` | `ttyS0` / `ttyAMA0` |
 | SUSE | No | `grub2-x86_64-efi` | `grub2-arm64-efi` | `ttyS0` / `ttyAMA0` |
@@ -128,6 +131,7 @@ Boot mode: use `$efi_part_path` (non-empty = EFI) as primary signal, `/sys/firmw
 |---|---|---|---|---|
 | RHEL 7 | `yum` | xfs | `4111` | Yes — **critical** |
 | RHEL 8+ | `dnf` | xfs | `4111` | Yes — **critical** |
+| AlmaLinux 8-10 | `dnf` | xfs | `4111` | Yes — **critical** |
 | Debian 11-13 | `apt-get` | ext4 | `4755` | No |
 | Ubuntu 24.04 | `apt-get` | ext4 | `4755` | Yes — **critical** |
 | SUSE 12-15 | `zypper` | xfs | `4755` | No |
@@ -143,7 +147,7 @@ Boot mode: use `$efi_part_path` (non-empty = EFI) as primary signal, `/sys/firmw
 4. **EFI grub.cfg must be a redirect shim** — `configfile` for RHEL/Debian/Ubuntu, `source` for SUSE
 5. **GRUB path**: `/boot/grub2/` for RHEL/SUSE, `/boot/grub/` for Debian/Ubuntu
 6. **BLS handling** only for RHEL 8+ — check `/boot/loader/entries/` for actual entries
-7. **Serial TTY**: `ttyS0` for x86_64, `ttyAMA0` for aarch64 (all 7 arm64 images confirmed)
+7. **Serial TTY**: `ttyS0` for x86_64, `ttyAMA0` for aarch64 (all 12 arm64 images confirmed)
 8. **Hyper-V drivers**: `--add-drivers` on x86_64 only; skip on aarch64 (built-in)
 9. **SLES 16 uses btrfs** with `@/` subvolumes — fstab must preserve them
 10. **sudo bits**: RHEL = `4111`, Debian/Ubuntu/SUSE = `4755`

@@ -1,7 +1,7 @@
 # ALAR Action Scripts — Backlog
 
 Tracks known bugs, enhancements, and technical debt across all ALAR action scripts.
-Findings are based on code review and data collected from 45 Azure VM images.
+Findings are based on code review and data collected from 56 Azure VM images.
 
 ---
 

@@ -171,8 +171,8 @@ any bootfix-related changes.
 
 ### vm-reference-data.md
 
-Consolidated reference of boot process details across 45 Azure VM images
-(RHEL 7-10, Debian 11-13, Ubuntu 24.04, SLES 12-16, arm64 variants).
+Consolidated reference of boot process details across 56 Azure VM images
+(RHEL 7-10, AlmaLinux 8-10, Debian 11-13, Ubuntu 24.04, SLES 12-16, arm64 variants).
 Provides quick-lookup tables for grub paths, package names, EFI patterns,
 BLS status, serial console TTY, and other distro-specific facts. Use this
 as context for any AI agent working on ALAR action scripts.
@@ -184,7 +184,7 @@ action scripts. Organized by priority and action script.
 
 ### vm-data-consolidated.json
 
-Raw collected data from 45 Azure VM images in a single JSON file (sanitized).
+Raw collected data from 56 Azure VM images in a single JSON file (sanitized).
 Generated using `sanitize-results.py` from multiple `results.json` files
 produced by `collect-vm-info.yml` runs across different VM groups and regions.
 
@@ -204,3 +204,64 @@ python dev/sanitize-results.py results1.json results2.json -o dev/vm-data-consol
 
 Use this file as context for any AI agent that needs to understand the actual
 system configuration details of specific Azure VM images across all ALAR actions.
+
+#### VM images included (56)
+
+| Host name | Publisher | Offer | SKU | Arch | Boot |
+|---|---|---|---|---|---|
+| almalinux-arm-10-arm64-64k-gen2 | almalinux | almalinux-arm | 10-arm64-64k-gen2 | aarch64 | EFI |
+| almalinux-arm-10-arm64-gen2 | almalinux | almalinux-arm | 10-arm64-gen2 | aarch64 | EFI |
+| almalinux-arm-8-arm-gen2 | almalinux | almalinux-arm | 8-arm-gen2 | aarch64 | EFI |
+| almalinux-arm-9-arm-64k-gen2 | almalinux | almalinux-arm | 9-arm-64k-gen2 | aarch64 | EFI |
+| almalinux-arm-9-arm-gen2 | almalinux | almalinux-arm | 9-arm-gen2 | aarch64 | EFI |
+| almalinux-x86-64-10-gen1 | almalinux | almalinux-x86_64 | 10-gen1 | x86_64 | BIOS |
+| almalinux-x86-64-10-gen2 | almalinux | almalinux-x86_64 | 10-gen2 | x86_64 | EFI |
+| almalinux-x86-64-8-gen1 | almalinux | almalinux-x86_64 | 8-gen1 | x86_64 | BIOS |
+| almalinux-x86-64-8-gen2 | almalinux | almalinux-x86_64 | 8-gen2 | x86_64 | EFI |
+| almalinux-x86-64-9-gen1 | almalinux | almalinux-x86_64 | 9-gen1 | x86_64 | BIOS |
+| almalinux-x86-64-9-gen2 | almalinux | almalinux-x86_64 | 9-gen2 | x86_64 | EFI |
+| debian-11-gen1 | Debian | debian-11 | 11 | x86_64 | BIOS |
+| debian-11-gen2 | Debian | debian-11 | 11-gen2 | x86_64 | EFI |
+| debian-12-arm64 | Debian | debian-12 | 12-arm64 | aarch64 | EFI |
+| debian-12-gen1 | Debian | debian-12 | 12 | x86_64 | BIOS |
+| debian-12-gen2 | Debian | debian-12 | 12-gen2 | x86_64 | EFI |
+| debian-13-arm64 | Debian | debian-13 | 13-arm64 | aarch64 | EFI |
+| debian-13-gen1 | Debian | debian-13 | 13 | x86_64 | BIOS |
+| debian-13-gen2 | Debian | debian-13 | 13-gen2 | x86_64 | EFI |
+| rhel-10-1-arm64 | RedHat | rhel-arm64 | 10_1-arm64 | aarch64 | EFI |
+| rhel-10-1-gen1 | RedHat | RHEL | 10_1 | x86_64 | BIOS |
+| rhel-10-gen2 | RedHat | RHEL | 10-lvm-gen2 | x86_64 | EFI |
+| rhel-7-6-gen1 | RedHat | RHEL | 7.6 | x86_64 | BIOS |
+| rhel-7-8-gen1 | RedHat | RHEL | 7.8 | x86_64 | BIOS |
+| rhel-8-10-arm64 | RedHat | rhel-arm64 | 8_10-arm64 | aarch64 | EFI |
+| rhel-8-9-gen1 | RedHat | RHEL | 8_9 | x86_64 | BIOS |
+| rhel-8-gen2 | RedHat | RHEL | 8-lvm-gen2 | x86_64 | EFI |
+| rhel-9-7-arm64 | RedHat | rhel-arm64 | 9_7-arm64 | aarch64 | EFI |
+| rhel-9-7-gen1 | RedHat | RHEL | 9_7 | x86_64 | BIOS |
+| rhel-9-gen2 | RedHat | RHEL | 9-lvm-gen2 | x86_64 | EFI |
+| rhel-ha-8-8-gen1 | RedHat | RHEL-HA | 8_8 | x86_64 | BIOS |
+| rhel-raw-10-1-gen1 | RedHat | rhel-raw | 10_1 | x86_64 | BIOS |
+| rhel-raw-10-gen1 | RedHat | rhel-raw | 10-raw | x86_64 | BIOS |
+| rhel-raw-10-gen2 | RedHat | rhel-raw | 10-raw-gen2 | x86_64 | EFI |
+| rhel-raw-8-4-gen1 | RedHat | rhel-raw | 8_4 | x86_64 | BIOS |
+| rhel-raw-8-9-gen1 | RedHat | rhel-raw | 8_9 | x86_64 | BIOS |
+| rhel-raw-8-gen1 | RedHat | rhel-raw | 8-raw | x86_64 | BIOS |
+| rhel-raw-8-gen2 | RedHat | rhel-raw | 8-raw-gen2 | x86_64 | EFI |
+| rhel-raw-89-gen2 | RedHat | rhel-raw | 89-gen2 | x86_64 | EFI |
+| rhel-raw-9-5-gen1 | RedHat | rhel-raw | 9_5 | x86_64 | BIOS |
+| rhel-raw-9-gen1 | RedHat | rhel-raw | 9-raw | x86_64 | BIOS |
+| rhel-raw-9-gen2 | RedHat | rhel-raw | 9-raw-gen2 | x86_64 | EFI |
+| rhel-sap-ha-84-gen2 | RedHat | RHEL-SAP-HA | 84sapha-gen2 | x86_64 | EFI |
+| rhel-sap-ha-96-gen2 | RedHat | RHEL-SAP-HA | 96sapha-gen2 | x86_64 | EFI |
+| sles-12-sp5-gen2 | SUSE | sles-12-sp5 | gen2 | x86_64 | EFI |
+| sles-15-sp6-gen2 | SUSE | sles-15-sp6 | gen2 | x86_64 | EFI |
+| sles-15-sp7-arm64 | SUSE | sles-15-sp7-arm64 | gen2 | aarch64 | EFI |
+| sles-15-sp7-basic-gen2 | SUSE | sles-15-sp7-basic | gen2 | x86_64 | EFI |
+| sles-15-sp7-gen1 | SUSE | sles-15-sp7 | gen1 | x86_64 | BIOS |
+| sles-16-gen1 | SUSE | sles-16-0-x86-64 | gen1 | x86_64 | BIOS |
+| sles-16-gen2 | SUSE | sles-16-0-x86-64 | gen2 | x86_64 | EFI |
+| sles-sap-15-sp7-gen1 | SUSE | sles-sap-15-sp7 | gen1 | x86_64 | BIOS |
+| sles-sap-15-sp7-gen2 | SUSE | sles-sap-15-sp7 | gen2 | x86_64 | EFI |
+| ubuntu-2404-arm64 | Canonical | ubuntu-24_04-lts | server-arm64 | aarch64 | EFI |
+| ubuntu-2404-gen1 | Canonical | ubuntu-24_04-lts | server-gen1 | x86_64 | BIOS |
+| ubuntu-2404-gen2 | Canonical | ubuntu-24_04-lts | server | x86_64 | EFI |
