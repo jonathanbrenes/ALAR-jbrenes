@@ -1,7 +1,7 @@
 # ALAR2 — AI Workflow Guide
 
 Use this file as mandatory guidance for any AI session working on ALAR.
-Load `dev/vm-data-consolidated.json` for complete context from 56 Azure VM images.
+Load `dev/vm-data-consolidated.json` for complete context from 97 Azure VM images.
 Known bugs and enhancements are tracked in `dev/backlog.md`.
 
 ### How to load this in a new AI session
@@ -54,11 +54,12 @@ src/action_implementation/   # Shell scripts — the actual recovery logic
   sudo-impl.sh               # Sudoers permissions fix
   helpers.sh                 # Shared utility functions (backup, checkPerm, etc.)
 dev/                         # Development tools and reference data
-  backlog.md                 # ← KNOWN BUGS AND ENHANCEMENTS (16 items)
-  vm-data-consolidated.json  # ← RAW DATA FROM 56 VMs (load for full context)
+  backlog.md                 # ← KNOWN BUGS AND ENHANCEMENTS (23 items)
+  vm-data-consolidated.json  # ← RAW DATA FROM 97 VMs (load for full context)
   vm-reference-data.md       # Extended reference tables
   alar-bootfix-unification.instructions.md  # Bootfix project plan
-  collect-vm-info.yml        # Ansible playbook to collect VM data
+  collect-vm-info.yml        # Ansible playbook to collect VM data (sanitizes inline)
+  merge-vm-data.py           # Merge new results into vm-data-consolidated.json
   test-action.sh             # Test harness for running action scripts
 ```
 
@@ -91,7 +92,7 @@ Boot mode: use `$efi_part_path` (non-empty = EFI) as primary signal, `/sys/firmw
 
 ---
 
-## Distro Quick Reference (from 56 VMs)
+## Distro Quick Reference (from 97 VMs)
 
 ### GRUB Commands and Paths
 
@@ -100,7 +101,8 @@ Boot mode: use `$efi_part_path` (non-empty = EFI) as primary signal, `/sys/firmw
 | RHEL 7-10 | `grub2-install` | `grub2-mkconfig` | `/boot/grub2/` | `redhat` |
 | AlmaLinux 8-10 | `grub2-install` | `grub2-mkconfig` | `/boot/grub2/` | `almalinux` |
 | Debian 11-13 | `grub-install` | `update-grub` | `/boot/grub/` | `debian` |
-| Ubuntu 24.04 | `grub-install` | `update-grub` | `/boot/grub/` | `ubuntu` |
+| Ubuntu 20.04-25.10 | `grub-install` | `update-grub` | `/boot/grub/` | `ubuntu` |
+| Azure Linux 3 | `grub2-install` | `grub2-mkconfig` | `/boot/grub2/` | **none** (BOOT only) |
 | SUSE 12-16 | `grub2-install` | `grub2-mkconfig` | `/boot/grub2/` | `BOOT` |
 
 ### EFI grub.cfg Redirect
@@ -113,6 +115,7 @@ Boot mode: use `$efi_part_path` (non-empty = EFI) as primary signal, `/sys/firmw
 | Debian/Ubuntu | `configfile` | Redirect shim to `/boot/grub/grub.cfg` |
 | SUSE 15+ | `source` | **NOT configfile** — must use `source` for SUSE |
 | SUSE 12 | `normal` | Minimal redirect pattern |
+| Azure Linux 3 | None | **No EFI grub.cfg** — no vendor dir, grub.cfg at `/boot/efi/boot/grub2/grub.cfg` |
 
 ### BLS, Packages, and Serial TTY
 
@@ -123,6 +126,7 @@ Boot mode: use `$efi_part_path` (non-empty = EFI) as primary signal, `/sys/firmw
 | AlmaLinux 8-10 | Yes | `grub2-efi-x64 shim-x64` | `grub2-efi-aa64 shim-aa64` | `ttyS0` / `ttyAMA0` |
 | Debian | No | `grub-efi-amd64-signed` | `grub-efi-arm64-signed` | `ttyS0` / `ttyAMA0` |
 | Ubuntu | No | `grub-efi-amd64-signed shim-signed` | `grub-efi-arm64-signed shim-signed` | `ttyS0` / `ttyAMA0` |
+| Azure Linux 3 | No | `grub2-efi-binary shim` | `grub2-efi-binary shim` | `ttyS0` / `ttyAMA0` |
 | SUSE | No | `grub2-x86_64-efi` | `grub2-arm64-efi` | `ttyS0` / `ttyAMA0` |
 
 ### Other Distro-Specific Facts
@@ -133,7 +137,10 @@ Boot mode: use `$efi_part_path` (non-empty = EFI) as primary signal, `/sys/firmw
 | RHEL 8+ | `dnf` | xfs | `4111` | Yes — **critical** |
 | AlmaLinux 8-10 | `dnf` | xfs | `4111` | Yes — **critical** |
 | Debian 11-13 | `apt-get` | ext4 | `4755` | No |
-| Ubuntu 24.04 | `apt-get` | ext4 | `4755` | Yes — **critical** |
+| Ubuntu 20.04-22.04 | `apt-get` | ext4 | `4755` | x86 server/minimal/Pro: Yes; arm64: No |
+| Ubuntu 24.04 | `apt-get` | ext4 | `4755` | Server/Pro: Yes; Minimal: No |
+| Ubuntu 25.10 | `apt-get` | ext4 | `4755` (sudo-rs via symlink) | Server: Yes; Minimal: No |
+| Azure Linux 3 | `tdnf`/`dnf` | ext4 | `4755` | No |
 | SUSE 12-15 | `zypper` | xfs | `4755` | No |
 | SUSE 16 | `zypper` | **btrfs** (subvols) | `4755` | No |
 
@@ -147,10 +154,11 @@ Boot mode: use `$efi_part_path` (non-empty = EFI) as primary signal, `/sys/firmw
 4. **EFI grub.cfg must be a redirect shim** — `configfile` for RHEL/Debian/Ubuntu, `source` for SUSE
 5. **GRUB path**: `/boot/grub2/` for RHEL/SUSE, `/boot/grub/` for Debian/Ubuntu
 6. **BLS handling** only for RHEL 8+ — check `/boot/loader/entries/` for actual entries
-7. **Serial TTY**: `ttyS0` for x86_64, `ttyAMA0` for aarch64 (all 12 arm64 images confirmed)
-8. **Hyper-V drivers**: `--add-drivers` on x86_64 only; skip on aarch64 (built-in)
+7. **Serial TTY**: `ttyS0` for x86_64, `ttyAMA0` for aarch64 (all arm64 images confirmed)
+8. **Hyper-V drivers**: Skip `--add-drivers` when modules are built-in (all Ubuntu 20.04-25.10, all Azure Linux 3, all aarch64, some SUSE x86); check `modules.builtin` at runtime
 9. **SLES 16 uses btrfs** with `@/` subvolumes — fstab must preserve them
-10. **sudo bits**: RHEL = `4111`, Debian/Ubuntu/SUSE = `4755`
+10. **sudo bits**: RHEL = `4111`, Debian/Ubuntu/SUSE/AzureLinux = `4755` (Ubuntu 25.10 uses a symlinked sudo)
+11. **Azure Linux 3**: Uses `grub2-*` commands, `/boot/grub2/`, `tdnf`/`dnf`, dracut, no EFI vendor dir, NVMe-native with separate `/boot`
 
 ---
 
@@ -167,13 +175,15 @@ Boot mode: use `$efi_part_path` (non-empty = EFI) as primary signal, `/sys/firmw
 - The plan covers unifying grubfix + efifix, adding arm64, BLS, and os-prober fixes
 
 ### Adding support for a new distro or image
-1. Run `dev/collect-vm-info.yml` against the new VM
-2. Compare output with `dev/vm-data-consolidated.json`
+1. Run `dev/collect-vm-info.yml` against the new VM (output is pre-sanitized)
+2. Merge with `python dev/merge-vm-data.py results.json -o dev/vm-data-consolidated.json`
 3. Update tables above and `dev/backlog.md` if new issues found
 
 ### Checking known bugs
-- Read `dev/backlog.md` — 16 items: Critical (3), High (4), Medium (5), Low (4)
+- Read `dev/backlog.md` — 23 items: Critical (3), High (7), Medium (7), Low (6)
 - Items 1-3 are most impactful: bootfix unification, missing `GRUB_DISABLE_OS_PROBER`, typos
+- Item #23: BLS entries deleted — recovery when `/boot/loader/entries/` is missing on RHEL 8+
+- Items 17-22 are from the 97-VM analysis: sudo-rs symlink, Azure Linux 3 EFI/NVMe/packages, os-prober patterns, Hyper-V built-in scope
 
 ### Testing changes
 1. Deploy a test VM matching target distro/arch/generation

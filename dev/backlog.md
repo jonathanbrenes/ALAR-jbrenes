@@ -1,7 +1,7 @@
 # ALAR Action Scripts — Backlog
 
 Tracks known bugs, enhancements, and technical debt across all ALAR action scripts.
-Findings are based on code review and data collected from 56 Azure VM images.
+Findings are based on code review and data collected from 97 Azure VM images.
 
 ---
 
@@ -66,10 +66,10 @@ Findings are based on code review and data collected from 56 Azure VM images.
 - **Impact**: Debian 12+, Ubuntu, SUSE use symlinked resolv.conf
 - **Fix**: Add `trap` for cleanup; handle symlink restore correctly
 
-### 9. `initrd-impl.sh` adds Hyper-V drivers on arm64 unnecessarily
+### 9. `initrd-impl.sh` adds Hyper-V drivers unnecessarily on Ubuntu, Azure Linux, and arm64
 - **Type**: Bug
-- **Impact**: arm64 cloud kernels have Hyper-V drivers built-in; `--add-drivers` may fail silently
-- **Fix**: Skip driver addition on aarch64
+- **Impact**: Hyper-V drivers (`hv_vmbus`, `hv_storvsc`, `hv_netvsc`) are built-in on all 38 Ubuntu images (20.04-25.10, x86 and arm64), all 6 Azure Linux 3 images, and some SUSE x86; `--add-drivers` is unnecessary and may fail silently
+- **Fix**: Skip `--add-drivers` when Hyper-V modules are built-in; check `/lib/modules/$(uname -r)/modules.builtin` for `hv_vmbus` before adding drivers
 
 ### 10. Debian not recognized in `get_efi_vendor_dir()` grep pattern
 - **Type**: Bug (in planned helpers.sh)
@@ -105,5 +105,67 @@ Findings are based on code review and data collected from 56 Azure VM images.
 
 ### 16. `collect-vm-info.yml` EFI classifier edge cases
 - **Type**: Minor
-- **Impact**: RHEL 7.x/8.x arm64 and SLES 12 SP5 show `unknown/needs_review`
-- **Fix**: Add patterns for RHEL 7 full standalone and SLES 12 `normal` redirect
+- **Impact**: 4 VMs showed `unknown/needs_review` due to classifier heuristic gaps
+- **Root causes and fixes** — **FIXED**:
+  - RHEL 7.8: `HAS_MENUENTRY > 5` missed exactly 5 menuentries → changed to `> 3`
+  - RHEL 7.8: `HAS_MKCONFIG` pattern `BEGIN.*grub-mkconfig` didn't match `BEGIN /etc/grub.d` markers → fixed pattern
+  - RHEL 8.10 arm64 / AlmaLinux 8.10 arm64: hybrid BLS + menuentry config (218 lines, `blscfg` + menuentries, no separate `/boot/grub2/grub.cfg`) → added `bls_full_config` type
+  - SLES 12 SP5: `normal` redirect (4-line shim using bare `normal` command) not matched by `'normal '` grep → added `'^normal$'` pattern and `redirect_method: normal`
+
+---
+
+## Findings from 97-VM Analysis
+
+### 17. Ubuntu 25.10 uses sudo-rs via alternatives symlink chain
+- **Type**: Enhancement
+- **Priority**: Medium
+- **Impact**: Ubuntu 25.10 replaced traditional sudo with `sudo-rs` (Rust): `/usr/bin/sudo` → `/etc/alternatives/sudo` → `/usr/lib/cargo/bin/sudo`; `sudo-impl.sh` must resolve symlinks before `chmod` to fix the real binary
+- **Affected**: `sudo-impl.sh`, `collect-vm-info.yml` (`find -type f` missed symlink — **FIXED**)
+- **Fix**: Use `readlink -f /usr/bin/sudo` to find real binary before chmod; playbook already fixed with `( -type f -o -type l )` + `readlink -f`
+
+### 18. Azure Linux 3 — No EFI vendor directory
+- **Type**: Bug
+- **Priority**: High
+- **Impact**: Azure Linux 3 has no vendor-specific EFI directory — only `BOOT/`; grub.cfg at `/boot/efi/boot/grub2/grub.cfg` (lowercase); no EFI redirect shim (`status: no_efi_grubcfg`)
+- **Affected**: `efifix-impl.sh`, planned `get_efi_vendor_dir()`
+- **Fix**: Handle AzureLinux as special case — no vendor dir, grub.cfg in non-standard path
+
+### 19. Azure Linux 3 — NVMe native boot with separate `/boot` partition
+- **Type**: Design consideration
+- **Priority**: High
+- **Impact**: Azure Linux 3 uses NVMe (`/dev/nvme0n1`) with 3-partition layout: EFI (p1, 64MB), `/boot` (p2, 500MB ext4), root (p3); unique among all distros
+- **Affected**: Partition detection, mount logic
+- **Fix**: Ensure ALAR handles separate `/boot` on NVMe correctly when disk is re-attached as SCSI data disk
+
+### 20. Azure Linux 3 — GRUB commands and package names differ from other distros
+- **Type**: Enhancement
+- **Priority**: Medium
+- **Impact**: Uses `grub2-install`/`grub2-mkconfig` (no `update-grub`), GRUB path `/boot/grub2/`, pkg mgr `tdnf`/`dnf`, dracut (v102) for initramfs, EFI packages `grub2-efi-binary`/`shim` (not arch-suffixed like RHEL)
+- **Affected**: All boot-related scripts when Azure Linux support is extended
+- **Fix**: Add AzureLinux-specific paths and package names to boot scripts
+
+### 21. os-prober not installed on Ubuntu minimal images (24.04+)
+- **Type**: Design consideration
+- **Priority**: Medium
+- **Impact**: Ubuntu 24.04+ minimal and Pro minimal images do NOT have os-prober; server and Pro (non-minimal) images still do; all arm64 minimal images lack it too
+- **Affected**: `GRUB_DISABLE_OS_PROBER=true` is still required on server images but is a no-op on minimal
+- **Fix**: No code change needed — `GRUB_DISABLE_OS_PROBER=true` is harmless when os-prober absent; update documentation
+
+### 22. Hyper-V modules built-in on all Ubuntu and Azure Linux 3 (not just arm64)
+- **Type**: Confirmation / expansion of #9
+- **Priority**: Low
+- **Impact**: All 38 Ubuntu images (20.04-25.10, x86_64 and aarch64) and all 6 Azure Linux 3 images have `hv_vmbus`/`hv_storvsc` built into the kernel; some SUSE x86 images also have built-in modules (48/97 total)
+- **Affected**: `initrd-impl.sh`
+- **Fix**: Same as #9 — check `modules.builtin` instead of assuming only arm64 needs the skip
+
+### 23. Recovery when `/boot/loader/entries/` is deleted on BLS systems
+- **Type**: Enhancement
+- **Priority**: High
+- **Impact**: RHEL 8+/AlmaLinux 8+ use BLS (`GRUB_ENABLE_BLSCFG=true`); if `/boot/loader/entries/` is removed, GRUB finds no boot entries and the VM fails to boot. All 34 BLS-enabled images have `grubby` available.
+- **Affected**: `grubfix-impl.sh`, `efifix-impl.sh`, planned bootfix
+- **Recovery approach**:
+  1. Detect BLS is enabled (`GRUB_ENABLE_BLSCFG=true` in `/etc/default/grub`) but entries are missing
+  2. Recreate `/boot/loader/entries/` directory
+  3. For each installed kernel in `/lib/modules/*/`, run `kernel-install add <version> /boot/vmlinuz-<version>` to regenerate BLS entries
+  4. Alternatively, use `grubby --info=ALL` to verify and `grubby --set-default` to set the default kernel
+  5. Regenerate `grub.cfg` with `GRUB_DISABLE_OS_PROBER=true grub2-mkconfig -o /boot/grub2/grub.cfg`

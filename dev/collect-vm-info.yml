@@ -228,108 +228,123 @@
 
     # ─── 12. GRUB.CFG FILES ─────────────────────────────────────────────────
     - name: Locate and inspect grub.cfg files
-      shell: |
-        for f in /boot/grub2/grub.cfg /boot/grub/grub.cfg /boot/efi/EFI/*/grub.cfg; do
-          [ -f "$f" ] || continue
-          echo "FOUND: $f ($(stat -c '%s bytes, %y' "$f"))"
-          echo "  sha256: $(sha256sum "$f" | awk '{print $1}')"
-          echo "  lines: $(wc -l < "$f")"
-          if grep -q "blscfg" "$f" 2>/dev/null; then
-            echo "  type: BLS shim"
-          elif head -20 "$f" | grep -q "BEGIN.*grub-mkconfig\|BEGIN.*grub2-mkconfig" 2>/dev/null; then
-            echo "  type: full generated grub.cfg"
-          else
-            echo "  type: custom/manual"
-          fi
-          echo "  first_30_lines:"
-          head -30 "$f" | sed 's/^/    /'
-          echo
-        done
+      shell:
+        cmd: |
+          for f in /boot/grub2/grub.cfg /boot/grub/grub.cfg /boot/efi/EFI/*/grub.cfg; do
+            [ -f "$f" ] || continue
+            echo "FOUND: $f ($(stat -c '%s bytes, %y' "$f"))"
+            echo "  sha256: $(sha256sum "$f" | awk '{print $1}')"
+            echo "  lines: $(wc -l < "$f")"
+            if grep -q "blscfg" "$f" 2>/dev/null; then
+              echo "  type: BLS shim"
+            elif head -20 "$f" | grep -q "BEGIN.*grub-mkconfig\|BEGIN.*grub2-mkconfig" 2>/dev/null; then
+              echo "  type: full generated grub.cfg"
+            else
+              echo "  type: custom/manual"
+            fi
+            echo "  first_30_lines:"
+            head -30 "$f" | sed 's/^/    /'
+            echo
+          done
       register: r_grubcfg
       changed_when: false
       failed_when: false
 
     # ─── 12b. EFI grub.cfg redirect vs standalone check ──────────────────────
     - name: Analyze EFI grub.cfg relationship to boot grub.cfg
-      shell: |
-        # Identify the main grub.cfg on the boot filesystem
-        BOOT_GRUBCFG=""
-        if [ -f /boot/grub2/grub.cfg ]; then
-          BOOT_GRUBCFG="/boot/grub2/grub.cfg"
-        elif [ -f /boot/grub/grub.cfg ]; then
-          BOOT_GRUBCFG="/boot/grub/grub.cfg"
-        fi
-
-        # Find all EFI grub.cfg files
-        EFI_GRUBCFGS=$(find /boot/efi/EFI -name grub.cfg 2>/dev/null)
-
-        if [ -z "$EFI_GRUBCFGS" ]; then
-          echo "efi_grubcfg_found: false"
-          echo "status: no_efi_grubcfg"
-          exit 0
-        fi
-
-        for efi_cfg in $EFI_GRUBCFGS; do
-          echo "--- $efi_cfg ---"
-          LINE_COUNT=$(wc -l < "$efi_cfg")
-          echo "line_count: $LINE_COUNT"
-
-          # Check if it's a redirect/shim (small file with configfile/source or search+prefix)
-          HAS_CONFIGFILE=$(grep -c 'configfile' "$efi_cfg" 2>/dev/null || echo 0)
-          HAS_SOURCE=$(grep -c 'source ' "$efi_cfg" 2>/dev/null || echo 0)
-          HAS_SEARCH=$(grep -c 'search' "$efi_cfg" 2>/dev/null || echo 0)
-          HAS_SET_PREFIX=$(grep -c 'set prefix=' "$efi_cfg" 2>/dev/null || echo 0)
-          HAS_BLSCFG=$(grep -c 'blscfg' "$efi_cfg" 2>/dev/null || echo 0)
-          HAS_MENUENTRY=$(grep -c 'menuentry' "$efi_cfg" 2>/dev/null || echo 0)
-          HAS_MKCONFIG=$(grep -c 'BEGIN.*grub-mkconfig\|BEGIN.*grub2-mkconfig' "$efi_cfg" 2>/dev/null || echo 0)
-
-          echo "has_configfile: $HAS_CONFIGFILE"
-          echo "has_source: $HAS_SOURCE"
-          echo "has_search_uuid: $HAS_SEARCH"
-          echo "has_set_prefix: $HAS_SET_PREFIX"
-          echo "has_blscfg: $HAS_BLSCFG"
-          echo "has_menuentry: $HAS_MENUENTRY"
-          echo "has_mkconfig_markers: $HAS_MKCONFIG"
-
-          # Classify the EFI grub.cfg
-          if [ "$LINE_COUNT" -le 10 ] && [ "$HAS_CONFIGFILE" -gt 0 ]; then
-            echo "type: redirect_shim"
-            echo "redirect_method: configfile"
-            echo "status: healthy"
-          elif [ "$LINE_COUNT" -le 10 ] && [ "$HAS_SOURCE" -gt 0 ]; then
-            echo "type: redirect_shim"
-            echo "redirect_method: source"
-            echo "status: healthy"
-          elif [ "$HAS_BLSCFG" -gt 0 ] && [ "$HAS_MENUENTRY" -eq 0 ]; then
-            echo "type: bls_shim"
-            echo "status: healthy"
-          elif [ "$HAS_MKCONFIG_MARKERS" -gt 0 ] || [ "$HAS_MENUENTRY" -gt 5 ]; then
-            echo "type: full_standalone"
-            # Check if boot grub.cfg also exists -> diverged
-            if [ -n "$BOOT_GRUBCFG" ] && [ -f "$BOOT_GRUBCFG" ]; then
-              BOOT_HASH=$(sha256sum "$BOOT_GRUBCFG" 2>/dev/null | awk '{print $1}')
-              EFI_HASH=$(sha256sum "$efi_cfg" 2>/dev/null | awk '{print $1}')
-              echo "boot_grubcfg: $BOOT_GRUBCFG"
-              echo "boot_grubcfg_hash: $BOOT_HASH"
-              echo "efi_grubcfg_hash: $EFI_HASH"
-              if [ "$BOOT_HASH" = "$EFI_HASH" ]; then
-                echo "status: full_standalone_identical"
-              else
-                echo "status: DIVERGED"
-                echo "warning: EFI and boot grub.cfg are different full configs"
-              fi
-            else
-              echo "status: full_standalone_only_efi"
-            fi
-          else
-            echo "type: unknown"
-            echo "status: needs_review"
+      shell:
+        cmd: |
+          # Identify the main grub.cfg on the boot filesystem
+          BOOT_GRUBCFG=""
+          if [ -f /boot/grub2/grub.cfg ]; then
+            BOOT_GRUBCFG="/boot/grub2/grub.cfg"
+          elif [ -f /boot/grub/grub.cfg ]; then
+            BOOT_GRUBCFG="/boot/grub/grub.cfg"
           fi
 
-          echo "full_content:"
-          cat "$efi_cfg" | sed 's/^/  /'
-          echo
-        done
+          # Find all EFI grub.cfg files
+          EFI_GRUBCFGS=$(find /boot/efi/EFI -name grub.cfg 2>/dev/null)
+
+          if [ -z "$EFI_GRUBCFGS" ]; then
+            echo "efi_grubcfg_found: false"
+            echo "status: no_efi_grubcfg"
+            exit 0
+          fi
+
+          for efi_cfg in $EFI_GRUBCFGS; do
+            echo "--- $efi_cfg ---"
+            LINE_COUNT=$(wc -l < "$efi_cfg")
+            echo "line_count: $LINE_COUNT"
+
+            # Check if it's a redirect/shim (small file with configfile/source or search+prefix)
+            HAS_CONFIGFILE=$(grep -c 'configfile' "$efi_cfg" 2>/dev/null || echo 0)
+            HAS_SOURCE=$(grep -c 'source ' "$efi_cfg" 2>/dev/null || echo 0)
+            HAS_SEARCH=$(grep -c 'search' "$efi_cfg" 2>/dev/null || echo 0)
+            HAS_SET_PREFIX=$(grep -c 'set prefix=' "$efi_cfg" 2>/dev/null || echo 0)
+            HAS_BLSCFG=$(grep -c 'blscfg' "$efi_cfg" 2>/dev/null || echo 0)
+            HAS_MENUENTRY=$(grep -c 'menuentry' "$efi_cfg" 2>/dev/null || echo 0)
+            HAS_MKCONFIG=$(grep -c 'BEGIN /etc/grub\.d' "$efi_cfg" 2>/dev/null || echo 0)
+            HAS_NORMAL=$(grep -c '^normal$' "$efi_cfg" 2>/dev/null || echo 0)
+
+            echo "has_configfile: $HAS_CONFIGFILE"
+            echo "has_source: $HAS_SOURCE"
+            echo "has_search_uuid: $HAS_SEARCH"
+            echo "has_set_prefix: $HAS_SET_PREFIX"
+            echo "has_blscfg: $HAS_BLSCFG"
+            echo "has_menuentry: $HAS_MENUENTRY"
+            echo "has_mkconfig_markers: $HAS_MKCONFIG"
+            echo "has_normal: $HAS_NORMAL"
+
+            # Classify the EFI grub.cfg
+            if [ "$LINE_COUNT" -le 10 ] && [ "$HAS_CONFIGFILE" -gt 0 ]; then
+              echo "type: redirect_shim"
+              echo "redirect_method: configfile"
+              echo "status: healthy"
+            elif [ "$LINE_COUNT" -le 10 ] && [ "$HAS_SOURCE" -gt 0 ]; then
+              echo "type: redirect_shim"
+              echo "redirect_method: source"
+              echo "status: healthy"
+            elif [ "$LINE_COUNT" -le 10 ] && [ "$HAS_NORMAL" -gt 0 ]; then
+              echo "type: redirect_shim"
+              echo "redirect_method: normal"
+              echo "status: healthy"
+            elif [ "$HAS_BLSCFG" -gt 0 ] && [ "$HAS_MENUENTRY" -eq 0 ]; then
+              echo "type: bls_shim"
+              echo "status: healthy"
+            elif [ "$HAS_BLSCFG" -gt 0 ] && [ "$HAS_MENUENTRY" -gt 0 ]; then
+              echo "type: bls_full_config"
+              if [ -n "$BOOT_GRUBCFG" ] && [ -f "$BOOT_GRUBCFG" ]; then
+                echo "status: bls_full_config_with_boot"
+              else
+                echo "status: bls_full_config_efi_only"
+              fi
+            elif [ "$HAS_MKCONFIG" -gt 0 ] || [ "$HAS_MENUENTRY" -gt 3 ]; then
+              echo "type: full_standalone"
+              # Check if boot grub.cfg also exists -> diverged
+              if [ -n "$BOOT_GRUBCFG" ] && [ -f "$BOOT_GRUBCFG" ]; then
+                BOOT_HASH=$(sha256sum "$BOOT_GRUBCFG" 2>/dev/null | cut -d' ' -f1)
+                EFI_HASH=$(sha256sum "$efi_cfg" 2>/dev/null | cut -d' ' -f1)
+                echo "boot_grubcfg: $BOOT_GRUBCFG"
+                echo "boot_grubcfg_hash: $BOOT_HASH"
+                echo "efi_grubcfg_hash: $EFI_HASH"
+                if [ "$BOOT_HASH" = "$EFI_HASH" ]; then
+                  echo "status: full_standalone_identical"
+                else
+                  echo "status: DIVERGED"
+                  echo "warning: EFI and boot grub.cfg are different full configs"
+                fi
+              else
+                echo "status: full_standalone_only_efi"
+              fi
+            else
+              echo "type: unknown"
+              echo "status: needs_review"
+            fi
+
+            echo "full_content:"
+            cat "$efi_cfg" | sed 's/^/  /'
+            echo
+          done
       register: r_efi_grubcfg_analysis
       changed_when: false
       failed_when: false
@@ -501,48 +516,33 @@
       failed_when: false
 
     - name: Check Hyper-V module type (loadable vs built-in)
-      shell: |
-        KVER=$(uname -r)
-        for mod in hv_vmbus hv_storvsc hv_netvsc; do
-          MODPATH=$(find /lib/modules/"$KVER" -name "${mod}.ko*" 2>/dev/null | head -1)
-          if [ -n "$MODPATH" ]; then
-            echo "$mod: module ($MODPATH)"
-          elif grep -q "$mod" /lib/modules/"$KVER"/modules.builtin 2>/dev/null; then
-            echo "$mod: built-in"
-          else
-            echo "$mod: NOT FOUND"
-          fi
-        done
+      shell:
+        cmd: |
+          KVER=$(uname -r)
+          for mod in hv_vmbus hv_storvsc hv_netvsc; do
+            MODPATH=$(find /lib/modules/"$KVER" -name "${mod}.ko*" 2>/dev/null | head -1)
+            if [ -n "$MODPATH" ]; then
+              echo "$mod: module ($MODPATH)"
+            elif grep -q "$mod" /lib/modules/"$KVER"/modules.builtin 2>/dev/null; then
+              echo "$mod: built-in"
+            else
+              echo "$mod: NOT FOUND"
+            fi
+          done
       register: r_hv_modules
       changed_when: false
       failed_when: false
 
-    # ─── 21. RESOLV.CONF ─────────────────────────────────────────────────────
-    - name: Get resolv.conf details
-      shell: |
-        ls -la /etc/resolv.conf
-        file /etc/resolv.conf
-        cat /etc/resolv.conf
-      register: r_resolv
-      changed_when: false
-      failed_when: false
+    # ─── 21. (resolv.conf collected but sanitized — see set_fact) ────────────
 
     # ═════════════════════════════════════════════════════════════════════════
     # ADDITIONAL DATA FOR OTHER ALAR ACTIONS
     # ═════════════════════════════════════════════════════════════════════════
 
-    # ─── 22. FSTAB ACTION: UUID/device mapping, mtab ─────────────────────────
-    - name: Get blkid (all block device UUIDs)
-      command: blkid
-      register: r_blkid
-      changed_when: false
-      failed_when: false
-
-    - name: Get mtab (current mounts)
-      command: cat /etc/mtab
-      register: r_mtab
-      changed_when: false
-      failed_when: false
+    # ─── 22. FSTAB ACTION: UUID/device mapping ──────────────────────────────
+    # NOTE: blkid, mtab, and resolv.conf are sanitized (not collected) to avoid
+    # leaking internal Azure DNS domains and verbose UUID mappings that are
+    # already available in fstab, mounts, and disk sections.
 
     - name: Check for resource disk in fstab
       shell: grep -E "azure_resource|ephemeral|LABEL=BEK" /etc/fstab 2>/dev/null || echo "none"
@@ -631,13 +631,16 @@
       failed_when: false
 
     - name: Check sudo binary setuid bits
-      shell: |
-        SUDO_BIN=$(find /usr/bin /bin /usr/sbin /sbin -maxdepth 1 -name sudo -type f 2>/dev/null | head -1)
-        if [ -n "$SUDO_BIN" ]; then
-          stat -c "%a %U:%G %n" "$SUDO_BIN"
-        else
-          echo "sudo not found"
-        fi
+      shell:
+        cmd: |
+          SUDO_BIN=$(find /usr/bin /bin /usr/sbin /sbin -maxdepth 1 -name sudo \( -type f -o -type l \) 2>/dev/null | head -1)
+          if [ -n "$SUDO_BIN" ]; then
+            # Resolve symlinks before stat so we get the real binary's permissions
+            SUDO_BIN=$(readlink -f "$SUDO_BIN")
+            stat -c "%a %U:%G %n" "$SUDO_BIN"
+          else
+            echo "sudo not found"
+          fi
       register: r_sudo_bits
       changed_when: false
       failed_when: false
@@ -655,14 +658,15 @@
       failed_when: false
 
     - name: Check for duplicate sudo users across sudoers files
-      shell: |
-        users=""
-        for file in /etc/sudoers /etc/sudoers.d/*; do
-          [ -f "$file" ] || continue
-          grep -E "^[A-Za-z0-9._%-]+\s+ALL" "$file" 2>/dev/null | awk '{print $1}' | while read u; do
-            echo "$u $file"
-          done
-        done | sort | awk '{print $1}' | uniq -d
+      shell:
+        cmd: |
+          users=""
+          for file in /etc/sudoers /etc/sudoers.d/*; do
+            [ -f "$file" ] || continue
+            grep -E "^[A-Za-z0-9._%-]+\s+ALL" "$file" 2>/dev/null | awk '{print $1}' | while read u; do
+              echo "$u $file"
+            done
+          done | sort | awk '{print $1}' | uniq -d
       register: r_sudoers_dupes
       changed_when: false
       failed_when: false
@@ -702,8 +706,8 @@
             kernel: "{{ r_kernel.stdout }}"
             os_release: "{{ r_os_release.stdout_lines }}"
           imds:
-            compute: "{{ r_imds_compute.stdout | default('{}') | from_json }}"
-            image_reference: "{{ r_imds_image.stdout | default('{}') | from_json }}"
+            compute: "{{ (r_imds_compute.stdout | default('{}') | from_json) | dict2items | selectattr('key', 'in', ['publisher', 'offer', 'sku', 'osType', 'vmSize', 'location']) | items2dict }}"
+            image_reference: "{{ (r_imds_image.stdout | default('{}') | from_json) | dict2items | selectattr('key', 'in', ['publisher', 'offer', 'sku']) | items2dict }}"
           boot_mode:
             mode: "{{ 'efi' if r_efi_dir.stat.exists else 'bios' }}"
             secure_boot: "{{ r_secureboot.stdout | default('unknown') }}"
@@ -760,10 +764,13 @@
           hyperv:
             loaded_modules: "{{ r_hv_loaded.stdout_lines | default([]) }}"
             module_types: "{{ r_hv_modules.stdout_lines | default([]) }}"
-          resolv_conf: "{{ r_resolv.stdout_lines | default([]) }}"
+          resolv_conf:
+            - "(sanitized)"
           fstab_detail:
-            blkid: "{{ r_blkid.stdout_lines | default([]) }}"
-            mtab: "{{ r_mtab.stdout_lines | default([]) }}"
+            blkid:
+              - "(sanitized)"
+            mtab:
+              - "(sanitized)"
             resource_disk: "{{ r_resource_disk.stdout_lines | default([]) }}"
             lv_details: "{{ r_lv_details.stdout_lines | default([]) }}"
           kernel_action:
@@ -806,8 +813,9 @@
       set_fact:
         combined_report:
           _meta:
+            description: "Consolidated VM reference data - {{ groups['all'] | length }} Azure images"
+            total_hosts: "{{ groups['all'] | length }}"
             generated_at: "{{ lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%SZ') }}"
-            host_count: "{{ groups['all'] | length }}"
           hosts: >-
             {{
               dict(
