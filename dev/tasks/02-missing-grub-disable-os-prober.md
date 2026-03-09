@@ -16,53 +16,53 @@ The rescue VM runs Ubuntu and has `os-prober` installed. When `grub2-mkconfig` o
 ### grubfix-impl.sh
 
 | Line | Current code | Fix |
-|---|---|---|
-| 43 | `grub2-mkconfig -o /boot/grub2/grub.cfg` | Prefix with `GRUB_DISABLE_OS_PROBER=true` |
-| 57 | `update-grub` | Prefix with `GRUB_DISABLE_OS_PROBER=true` |
-| 77 | `grub2-mkconfig -o /boot/grub2/grub.cfg` | Prefix with `GRUB_DISABLE_OS_PROBER=true` |
+|:------|:------|:------|
+| 43 | grub2-mkconfig -o /boot/grub2/grub.cfg | Prefix with GRUB_DISABLE_OS_PROBER=true |
+| 57 | update-grub | Prefix with GRUB_DISABLE_OS_PROBER=true |
+| 77 | grub2-mkconfig -o /boot/grub2/grub.cfg | Prefix with GRUB_DISABLE_OS_PROBER=true |
 
-Note: Line 31 (`recover_redhat`) already has the prefix — only SUSE, Ubuntu, and AzureLinux sections are missing it.
+Note: Line 31 (recover_redhat) already has the prefix — only SUSE, Ubuntu, and AzureLinux sections are missing it.
 
 ### efifix-impl.sh
 
 | Line | Current code | Fix |
-|---|---|---|
-| 72 | `grub2-mkconfig -o /boot/grub2/grub.cfg` | Prefix with `GRUB_DISABLE_OS_PROBER=true` |
-| 129 | `grub2-mkconfig -o /boot/grub2/grub.cfg` | Prefix with `GRUB_DISABLE_OS_PROBER=true` |
-| 139 | `update-grub` | Prefix with `GRUB_DISABLE_OS_PROBER=true` |
+|:------|:------|:------|
+| 72 | grub2-mkconfig -o /boot/grub2/grub.cfg | Prefix with GRUB_DISABLE_OS_PROBER=true |
+| 129 | grub2-mkconfig -o /boot/grub2/grub.cfg | Prefix with GRUB_DISABLE_OS_PROBER=true |
+| 139 | update-grub | Prefix with GRUB_DISABLE_OS_PROBER=true |
 
-Note: Lines 30-31 (`recover_redhat`) already have the prefix.
+Note: Lines 30-31 (recover_redhat) already have the prefix.
 
 ### initrd-impl.sh
 
 | Line | Current code | Fix |
-|---|---|---|
-| 34 | `grub2-mkconfig -o /boot/grub2/grub.cfg` | Prefix with `GRUB_DISABLE_OS_PROBER=true` |
-| 55 | `grub-mkconfig -o /boot/grub/grub.cfg` | Prefix with `GRUB_DISABLE_OS_PROBER=true` |
-| 56 | `grub-mkconfig -o /boot/efi/EFI/ubuntu/grub.cfg` | Prefix with `GRUB_DISABLE_OS_PROBER=true` |
-| 68 | `grub2-mkconfig -o /boot/grub2/grub.cfg` | Prefix with `GRUB_DISABLE_OS_PROBER=true` |
-| 88 | `grub2-mkconfig -o /boot/grub2/grub.cfg` | Prefix with `GRUB_DISABLE_OS_PROBER=true` |
+|:------|:------|:------|
+| 34 | grub2-mkconfig -o /boot/grub2/grub.cfg | Prefix with GRUB_DISABLE_OS_PROBER=true |
+| 55 | grub-mkconfig -o /boot/grub/grub.cfg | Prefix with GRUB_DISABLE_OS_PROBER=true |
+| 56 | grub-mkconfig -o /boot/efi/EFI/ubuntu/grub.cfg | Prefix with GRUB_DISABLE_OS_PROBER=true |
+| 68 | grub2-mkconfig -o /boot/grub2/grub.cfg | Prefix with GRUB_DISABLE_OS_PROBER=true |
+| 88 | grub2-mkconfig -o /boot/grub2/grub.cfg | Prefix with GRUB_DISABLE_OS_PROBER=true |
 
 None of the initrd-impl.sh calls have the prefix.
 
 ### kernel-impl.sh
 
 | Line | Current code | Fix |
-|---|---|---|
-| 33 | `update-grub` | Prefix with `GRUB_DISABLE_OS_PROBER=true` |
-| 41 | `grub2-mkconfig -o /boot/grub2/grub.cfg` | Prefix with `GRUB_DISABLE_OS_PROBER=true` |
-| 51 | `grub2-mkconfig -o /boot/grub2/grub.cfg` | Prefix with `GRUB_DISABLE_OS_PROBER=true` |
+|:------|:------|:------|
+| 33 | update-grub | Prefix with GRUB_DISABLE_OS_PROBER=true |
+| 41 | grub2-mkconfig -o /boot/grub2/grub.cfg | Prefix with GRUB_DISABLE_OS_PROBER=true |
+| 51 | grub2-mkconfig -o /boot/grub2/grub.cfg | Prefix with GRUB_DISABLE_OS_PROBER=true |
 
-Note: Lines 20-21 (`isRedHat`) already have the prefix.
+Note: Lines 20-21 (isRedHat) already have the prefix.
 
 ### serialconsole-impl.sh
 
 | Line | Current code | Fix |
-|---|---|---|
-| 66 | `grub2-mkconfig -o /boot/efi/EFI/${distro}/grub.cfg` | Prefix with `GRUB_DISABLE_OS_PROBER=true` |
-| 69 | `grub2-mkconfig -o /boot/grub2/grub.cfg` | Prefix with `GRUB_DISABLE_OS_PROBER=true` |
-| 95 | `update-grub` | Prefix with `GRUB_DISABLE_OS_PROBER=true` |
-| 109 | `update-grub` | Prefix with `GRUB_DISABLE_OS_PROBER=true` |
+|:------|:------|:------|
+| 66 | grub2-mkconfig -o /boot/efi/EFI/\${distro}/grub.cfg | Prefix with GRUB_DISABLE_OS_PROBER=true |
+| 69 | grub2-mkconfig -o /boot/grub2/grub.cfg | Prefix with GRUB_DISABLE_OS_PROBER=true |
+| 95 | update-grub | Prefix with GRUB_DISABLE_OS_PROBER=true |
+| 109 | update-grub | Prefix with GRUB_DISABLE_OS_PROBER=true |
 
 ## How to fix
 

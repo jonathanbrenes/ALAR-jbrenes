@@ -10,7 +10,7 @@
 Not all Ubuntu images have `os-prober` installed. The pattern varies by offer type and version:
 
 | Image type | os-prober installed |
-|---|---|
+|:------|:------|
 | Ubuntu 20.04-22.04 server (x86) | Yes |
 | Ubuntu 20.04-22.04 minimal (x86) | Yes |
 | Ubuntu 20.04-22.04 Pro (x86) | Yes |

@@ -10,13 +10,13 @@ Task 12 covers the fix (check `modules.builtin` before adding Hyper-V drivers). 
 ## Built-in vs loadable module status
 
 | Distro | Hyper-V modules | Count |
-|---|---|---|
+|:------|:------|:------|
 | Ubuntu 20.04-25.10 (all x86 + arm64) | **Built-in** | 38 images |
 | Azure Linux 3 (all x86 + arm64) | **Built-in** | 6 images |
 | All aarch64 images (all distros) | **Built-in** | ~20 images |
 | SUSE (some x86_64) | **Built-in** | varies |
-| RHEL 7-10 (x86_64) | Loadable | requires `--add-drivers` |
-| AlmaLinux 8-10 (x86_64) | Loadable | requires `--add-drivers` |
+| RHEL 7-10 (x86_64) | Loadable | requires --add-drivers |
+| AlmaLinux 8-10 (x86_64) | Loadable | requires --add-drivers |
 | Debian 11-13 (x86_64) | Loadable | requires initramfs-tools modules |
 
 **Total**: 48/97 images have Hyper-V modules built in.

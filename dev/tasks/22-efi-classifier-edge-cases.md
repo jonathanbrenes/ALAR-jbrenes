@@ -11,12 +11,12 @@
 4 VMs showed `unknown/needs_review` in the EFI grub.cfg classifier due to heuristic gaps:
 
 | VM | Root cause | Fix applied |
-|---|---|---|
-| RHEL 7.8 | `HAS_MENUENTRY > 5` missed exactly 5 menuentries | Changed threshold to `> 3` |
-| RHEL 7.8 | `HAS_MKCONFIG` pattern `BEGIN.*grub-mkconfig` didn't match `BEGIN /etc/grub.d` | Fixed regex pattern |
-| RHEL 8.10 arm64 | Hybrid BLS + menuentry config (218 lines, `blscfg` + menuentries) | Added `bls_full_config` type |
+|:------|:------|:------|
+| RHEL 7.8 | HAS_MENUENTRY > 5 missed exactly 5 menuentries | Changed threshold to > 3 |
+| RHEL 7.8 | HAS_MKCONFIG pattern BEGIN.*grub-mkconfig didn't match BEGIN /etc/grub.d | Fixed regex pattern |
+| RHEL 8.10 arm64 | Hybrid BLS + menuentry config (218 lines, blscfg + menuentries) | Added bls_full_config type |
 | AlmaLinux 8.10 arm64 | Same hybrid pattern | Same fix |
-| SLES 12 SP5 | `normal` redirect (bare `normal` command) not matched by `'normal '` grep | Added `'^normal$'` pattern and `redirect_method: normal` |
+| SLES 12 SP5 | normal redirect (bare normal command) not matched by 'normal ' grep | Added '^normal\$' pattern and redirect_method: normal |
 
 ## Current status
 

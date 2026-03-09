@@ -37,15 +37,15 @@ These patterns are incomplete:
 ## Vendor directories (from 97-VM data)
 
 | Distro | EFI vendor dir |
-|---|---|
-| RHEL 7-10 | `redhat` |
-| CentOS | `centos` |
-| AlmaLinux 8-10 | `almalinux` |
-| RockyLinux | `rocky` |
-| Debian 11-13 | `debian` |
-| Ubuntu 20.04-25.10 | `ubuntu` |
-| SUSE 12-16 | `BOOT` |
-| Azure Linux 3 | **none** (only `/boot/efi/EFI/BOOT/`) |
+|:------|:------|
+| RHEL 7-10 | redhat |
+| CentOS | centos |
+| AlmaLinux 8-10 | almalinux |
+| RockyLinux | rocky |
+| Debian 11-13 | debian |
+| Ubuntu 20.04-25.10 | ubuntu |
+| SUSE 12-16 | BOOT |
+| Azure Linux 3 | **none** (only /boot/efi/EFI/BOOT/) |
 
 ## How to fix
 

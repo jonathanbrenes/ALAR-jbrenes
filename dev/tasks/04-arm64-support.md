@@ -12,15 +12,15 @@ All boot-related scripts assume x86_64. arm64 Azure VMs exist for RHEL 8-10, Alm
 ## Key differences (arm64 vs x86_64)
 
 | Aspect | x86_64 | arm64 |
-|---|---|---|
+|:------|:------|:------|
 | Boot mode | BIOS or EFI | **Always EFI** |
-| GRUB target | `i386-pc` (BIOS) / `x86_64-efi` | `arm64-efi` |
-| RHEL EFI packages | `grub2-efi-x64 shim-x64` | `grub2-efi-aa64 shim-aa64` |
-| Debian EFI packages | `grub-efi-amd64-signed` | `grub-efi-arm64-signed` |
-| Ubuntu EFI packages | `grub-efi-amd64-signed shim-signed` | `grub-efi-arm64-signed shim-signed` |
-| SUSE EFI packages | `grub2-x86_64-efi` | `grub2-arm64-efi` |
-| Serial TTY | `ttyS0` | `ttyAMA0` |
-| Hyper-V modules | Loadable (need dracut `--add-drivers`) | **Built-in** (skip `--add-drivers`) |
+| GRUB target | i386-pc (BIOS) / x86_64-efi | arm64-efi |
+| RHEL EFI packages | grub2-efi-x64 shim-x64 | grub2-efi-aa64 shim-aa64 |
+| Debian EFI packages | grub-efi-amd64-signed | grub-efi-arm64-signed |
+| Ubuntu EFI packages | grub-efi-amd64-signed shim-signed | grub-efi-arm64-signed shim-signed |
+| SUSE EFI packages | grub2-x86_64-efi | grub2-arm64-efi |
+| Serial TTY | ttyS0 | ttyAMA0 |
+| Hyper-V modules | Loadable (need dracut --add-drivers) | **Built-in** (skip --add-drivers) |
 
 ## Affected lines
 

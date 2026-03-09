@@ -10,10 +10,10 @@
 Azure Linux 3 is the only distro that boots natively from NVMe (`/dev/nvme0n1`) with a 3-partition layout:
 
 | Partition | Size | Filesystem | Mount point |
-|---|---|---|---|
-| p1 | 64 MB | vfat | `/boot/efi` |
-| p2 | 500 MB | ext4 | `/boot` |
-| p3 | remaining | ext4 | `/` |
+|:------|:------|:------|:------|
+| p1 | 64 MB | vfat | /boot/efi |
+| p2 | 500 MB | ext4 | /boot |
+| p3 | remaining | ext4 | / |
 
 All other distros either:
 - Use SCSI (`/dev/sda`) natively, or

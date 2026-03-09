@@ -42,6 +42,6 @@ BAUD=${existing_speed:-115200}
 ## Inconsistencies to resolve
 
 | Setting | Line 29 | Line 56 | Correct |
-|---|---|---|---|
-| `GRUB_SERIAL_COMMAND --speed` | `9600` | `19600` (typo?) | Should match CMDLINE or use `115200` |
-| `GRUB_CMDLINE_LINUX console` | `115200` | `115200` | OK |
+|:------|:------|:------|:------|
+| GRUB_SERIAL_COMMAND --speed | 9600 | 19600 (typo?) | Should match CMDLINE or use 115200 |
+| GRUB_CMDLINE_LINUX console | 115200 | 115200 | OK |

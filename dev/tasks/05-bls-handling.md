@@ -46,14 +46,20 @@ fi
 ## How to detect BLS
 
 ```bash
-# Check if BLS is enabled
-grep -q 'GRUB_ENABLE_BLSCFG=true' /etc/default/grub && [[ -d /boot/loader/entries ]]
+# Check if BLS is enabled (do NOT check the directory — it may have been deleted)
+if grep -q 'GRUB_ENABLE_BLSCFG=true' /etc/default/grub 2>/dev/null; then
+    if [[ -d /boot/loader/entries ]] && ls /boot/loader/entries/*.conf &>/dev/null; then
+        # BLS enabled, entries exist — update them
+    else
+        # BLS enabled, entries MISSING — recreate (Task 10 recovery)
+    fi
+fi
 ```
 
 ## Distros that use BLS
 
 | Distro | BLS | grubby available |
-|---|---|---|
+|:------|:------|:------|
 | RHEL 8-10 (x86_64 + arm64) | Yes | Yes |
 | AlmaLinux 8-10 (x86_64 + arm64) | Yes | Yes |
 | RHEL 7 | No | Yes (but no BLS) |

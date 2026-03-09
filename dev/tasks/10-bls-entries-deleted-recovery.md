@@ -86,7 +86,7 @@ This recovery logic should be part of the unified bootfix (Task 01):
 ## Distros affected
 
 | Distro | BLS | kernel-install available | grubby available |
-|---|---|---|---|
+|:------|:------|:------|:------|
 | RHEL 8-10 | Yes | Yes | Yes |
 | AlmaLinux 8-10 | Yes | Yes | Yes |
 | All others | No | N/A | N/A |

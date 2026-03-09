@@ -12,15 +12,15 @@ Ubuntu 25.10 introduces changes that will likely carry into 26.04 LTS. Since 26.
 ## Known differences in Ubuntu 25.10
 
 | Aspect | Ubuntu 24.04 | Ubuntu 25.10 |
-|---|---|---|
-| sudo implementation | Traditional sudo | `sudo-rs` (Rust) via alternatives symlink |
-| sudo binary path | `/usr/bin/sudo` (direct) | `/usr/bin/sudo` → `/etc/alternatives/sudo` → `/usr/lib/cargo/bin/sudo` |
-| sudo permissions | `4755` | `4755` (on the real binary) |
+|:------|:------|:------|
+| sudo implementation | Traditional sudo | sudo-rs (Rust) via alternatives symlink |
+| sudo binary path | /usr/bin/sudo (direct) | /usr/bin/sudo → /etc/alternatives/sudo → /usr/lib/cargo/bin/sudo |
+| sudo permissions | 4755 | 4755 (on the real binary) |
 | os-prober (server) | Installed | Installed |
 | os-prober (minimal) | Not installed | Not installed |
 | Hyper-V modules | Built-in | Built-in |
-| GRUB | `grub-install` / `update-grub` | Same |
-| EFI vendor dir | `ubuntu` | `ubuntu` |
+| GRUB | grub-install / update-grub | Same |
+| EFI vendor dir | ubuntu | ubuntu |
 
 ## What needs attention
 

@@ -32,6 +32,12 @@ Findings are based on code review and data collected from 97 Azure VM images.
 - `efifix-impl.sh` `recover_ubuntu()`: uses `$new_efi_uuid` but variable is `$new_uuid`
 - `efifix-impl.sh` `recover_ubuntu()`: missing EFI partition existence check
 
+### 25. `fstab-impl.sh` LVM branch fails on RHEL 9/10 (UUID-based fstab)
+- **Type**: Bug
+- **Impact**: On RHEL 9+ and RHEL 10 LVM images, fstab uses UUIDs instead of `/dev/mapper/rootvg-*` device paths. The LVM branch (lines 93-99) greps for `rootvg-rootlv`, `rootvg-homelv`, etc. — these patterns match nothing on RHEL 9/10, producing an **empty fstab** that prevents boot.
+- **Confirmed**: RHEL 8 LVM uses `/dev/mapper/rootvg-*` (works), RHEL 9/10 LVM use `UUID=...` (broken)
+- **Fix**: Match by mount point instead of device name: `awk '/[[:space:]]+\/[[:space:]]+/ {print}'` for root, `awk '/[[:space:]]+\/home[[:space:]]+/ {print}'` for /home, etc.
+
 ---
 
 ## High Priority — Should Fix
@@ -46,6 +52,7 @@ Findings are based on code review and data collected from 97 Azure VM images.
 - **Type**: Enhancement
 - **Impact**: RHEL 8.x+ uses BLS entries in `/boot/loader/entries/`
 - **Affected**: serialconsole (must update BLS entry options), kernel (must use `grubby --set-default`)
+- **Detection**: Check only `GRUB_ENABLE_BLSCFG=true` in `/etc/default/grub` — do NOT require `/boot/loader/entries/` to exist (it may have been deleted and need recovery, see #23)
 
 ### 6. EFI grub.cfg written as full standalone instead of redirect shim
 - **Type**: Bug (in efifix-impl.sh for RedHat)

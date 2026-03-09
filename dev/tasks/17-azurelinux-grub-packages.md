@@ -12,17 +12,17 @@ Azure Linux 3 uses different tools and paths than other distros. The current `gr
 ## Azure Linux 3 specifics
 
 | Aspect | Azure Linux 3 | RHEL | Ubuntu |
-|---|---|---|---|
-| Package manager | `tdnf` / `dnf` | `dnf` / `yum` | `apt-get` |
-| GRUB install | `grub2-install` | `grub2-install` | `grub-install` |
-| GRUB mkconfig | `grub2-mkconfig` | `grub2-mkconfig` | `update-grub` |
-| GRUB path | `/boot/grub2/` | `/boot/grub2/` | `/boot/grub/` |
-| Initramfs tool | `dracut` (v102) | `dracut` | `update-initramfs` |
-| EFI packages (x86) | `grub2-efi-binary shim` | `grub2-efi-x64 shim-x64` | `grub-efi-amd64-signed shim-signed` |
-| EFI packages (arm64) | `grub2-efi-binary shim` | `grub2-efi-aa64 shim-aa64` | `grub-efi-arm64-signed shim-signed` |
-| EFI vendor dir | **none** (only `BOOT/`) | `redhat` | `ubuntu` |
+|:------|:------|:------|:------|
+| Package manager | tdnf / dnf | dnf / yum | apt-get |
+| GRUB install | grub2-install | grub2-install | grub-install |
+| GRUB mkconfig | grub2-mkconfig | grub2-mkconfig | update-grub |
+| GRUB path | /boot/grub2/ | /boot/grub2/ | /boot/grub/ |
+| Initramfs tool | dracut (v102) | dracut | update-initramfs |
+| EFI packages (x86) | grub2-efi-binary shim | grub2-efi-x64 shim-x64 | grub-efi-amd64-signed shim-signed |
+| EFI packages (arm64) | grub2-efi-binary shim | grub2-efi-aa64 shim-aa64 | grub-efi-arm64-signed shim-signed |
+| EFI vendor dir | **none** (only BOOT/) | redhat | ubuntu |
 | Hyper-V modules | **Built-in** | Loadable | **Built-in** |
-| `/boot` partition | Separate (500MB ext4) | On root (or LVM) | On root |
+| /boot partition | Separate (500MB ext4) | On root (or LVM) | On root |
 
 Note: Azure Linux EFI packages are NOT arch-suffixed (`grub2-efi-binary` for both x86 and arm64).
 
