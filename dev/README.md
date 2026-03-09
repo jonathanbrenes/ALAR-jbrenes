@@ -130,6 +130,28 @@ ansible-playbook -i inventory dev/collect-vm-info.yml
 
 ---
 
+### merge-vm-data.py
+
+**Merge tool for combining new VM collection results into `vm-data-consolidated.json`.**
+
+Takes one or more results JSON files (already sanitized by `collect-vm-info.yml`)
+and merges them into the consolidated file. Each VM is keyed by its IMDS
+`publisher:offer:sku`, so the same image collected from different inventories
+always maps to the same entry.
+
+```bash
+# Merge new results into the default consolidated file
+python dev/merge-vm-data.py results.json
+
+# Merge multiple files, writing to a specific output
+python dev/merge-vm-data.py results_alma.json results_azlinux.json -o vm-data-consolidated.json
+
+# Dry run — show what would change without writing
+python dev/merge-vm-data.py results.json --dry-run
+```
+
+---
+
 ## Typical Workflow
 
 1. **Deploy test VMs** from the image catalog using ARM templates
@@ -210,15 +232,6 @@ system configuration details of specific Azure VM images across all ALAR actions
 
 | Publisher | Offer | SKU | Arch | Boot |
 |---|---|---|---|---|
-| Canonical | 0001-com-ubuntu-minimal-focal | minimal-20_04-lts-gen2 | x86_64 | EFI |
-| Canonical | 0001-com-ubuntu-minimal-focal | minimal-20_04-lts | x86_64 | BIOS |
-| Canonical | 0001-com-ubuntu-minimal-jammy | minimal-22_04-lts-gen2 | x86_64 | EFI |
-| Canonical | 0001-com-ubuntu-minimal-jammy | minimal-22_04-lts | x86_64 | BIOS |
-| Canonical | 0001-com-ubuntu-server-focal | 20_04-lts-arm64 | aarch64 | EFI |
-| Canonical | 0001-com-ubuntu-server-focal | 20_04-lts-gen2 | x86_64 | EFI |
-| Canonical | 0001-com-ubuntu-server-focal | 20_04-lts | x86_64 | BIOS |
-| Canonical | 0001-com-ubuntu-server-jammy | 22_04-lts-gen2 | x86_64 | EFI |
-| Canonical | 0001-com-ubuntu-server-jammy | 22_04-lts | x86_64 | BIOS |
 | almalinux | almalinux-arm | 10-arm64-64k-gen2 | aarch64 | EFI |
 | almalinux | almalinux-arm | 10-arm64-gen2 | aarch64 | EFI |
 | almalinux | almalinux-arm | 8-arm-gen2 | aarch64 | EFI |
@@ -230,12 +243,44 @@ system configuration details of specific Azure VM images across all ALAR actions
 | almalinux | almalinux-x86_64 | 8-gen2 | x86_64 | EFI |
 | almalinux | almalinux-x86_64 | 9-gen1 | x86_64 | BIOS |
 | almalinux | almalinux-x86_64 | 9-gen2 | x86_64 | EFI |
-| MicrosoftCBLMariner | azure-linux-3 | azure-linux-3-arm64 | aarch64 | EFI |
-| MicrosoftCBLMariner | azure-linux-3 | azure-linux-3-arm64-gen2-fips | aarch64 | EFI |
-| MicrosoftCBLMariner | azure-linux-3 | azure-linux-3-fips | x86_64 | BIOS |
-| MicrosoftCBLMariner | azure-linux-3 | azure-linux-3-gen2-fips | x86_64 | EFI |
-| MicrosoftCBLMariner | azure-linux-3 | azure-linux-3-gen2 | x86_64 | EFI |
-| MicrosoftCBLMariner | azure-linux-3 | azure-linux-3 | x86_64 | BIOS |
+| Canonical | 0001-com-ubuntu-minimal-focal | minimal-20_04-lts-gen2 | x86_64 | EFI |
+| Canonical | 0001-com-ubuntu-minimal-focal | minimal-20_04-lts | x86_64 | BIOS |
+| Canonical | 0001-com-ubuntu-minimal-jammy | minimal-22_04-lts-gen2 | x86_64 | EFI |
+| Canonical | 0001-com-ubuntu-minimal-jammy | minimal-22_04-lts | x86_64 | BIOS |
+| Canonical | 0001-com-ubuntu-server-focal | 20_04-lts-arm64 | aarch64 | EFI |
+| Canonical | 0001-com-ubuntu-server-focal | 20_04-lts-gen2 | x86_64 | EFI |
+| Canonical | 0001-com-ubuntu-server-focal | 20_04-lts | x86_64 | BIOS |
+| Canonical | 0001-com-ubuntu-server-jammy | 22_04-lts-gen2 | x86_64 | EFI |
+| Canonical | 0001-com-ubuntu-server-jammy | 22_04-lts | x86_64 | BIOS |
+| Canonical | ubuntu-22_04-lts | server-gen1 | x86_64 | BIOS |
+| Canonical | ubuntu-22_04-lts | server | x86_64 | EFI |
+| Canonical | ubuntu-22_04-lts | ubuntu-minimal-gen1 | x86_64 | BIOS |
+| Canonical | ubuntu-22_04-lts | ubuntu-minimal | x86_64 | EFI |
+| Canonical | ubuntu-22_04-lts | ubuntu-pro-arm64 | aarch64 | EFI |
+| Canonical | ubuntu-22_04-lts | ubuntu-pro-fips-arm64 | aarch64 | EFI |
+| Canonical | ubuntu-22_04-lts | ubuntu-pro-fips | x86_64 | EFI |
+| Canonical | ubuntu-22_04-lts | ubuntu-pro-gen1 | x86_64 | BIOS |
+| Canonical | ubuntu-22_04-lts | ubuntu-pro-minimal-arm64 | aarch64 | EFI |
+| Canonical | ubuntu-22_04-lts | ubuntu-pro-minimal-gen1 | x86_64 | BIOS |
+| Canonical | ubuntu-22_04-lts | ubuntu-pro-minimal | x86_64 | EFI |
+| Canonical | ubuntu-22_04-lts | ubuntu-pro | x86_64 | EFI |
+| Canonical | ubuntu-24_04-lts | minimal-arm64 | aarch64 | EFI |
+| Canonical | ubuntu-24_04-lts | minimal-gen1 | x86_64 | BIOS |
+| Canonical | ubuntu-24_04-lts | minimal | x86_64 | EFI |
+| Canonical | ubuntu-24_04-lts | server-arm64 | aarch64 | EFI |
+| Canonical | ubuntu-24_04-lts | server-gen1 | x86_64 | BIOS |
+| Canonical | ubuntu-24_04-lts | server | x86_64 | EFI |
+| Canonical | ubuntu-24_04-lts | ubuntu-pro-arm64 | aarch64 | EFI |
+| Canonical | ubuntu-24_04-lts | ubuntu-pro-gen1 | x86_64 | BIOS |
+| Canonical | ubuntu-24_04-lts | ubuntu-pro-minimal-arm64 | aarch64 | EFI |
+| Canonical | ubuntu-24_04-lts | ubuntu-pro-minimal | x86_64 | EFI |
+| Canonical | ubuntu-24_04-lts | ubuntu-pro | x86_64 | EFI |
+| Canonical | ubuntu-25_10 | minimal-arm64 | aarch64 | EFI |
+| Canonical | ubuntu-25_10 | minimal-gen1 | x86_64 | BIOS |
+| Canonical | ubuntu-25_10 | minimal | x86_64 | EFI |
+| Canonical | ubuntu-25_10 | server-arm64 | aarch64 | EFI |
+| Canonical | ubuntu-25_10 | server-gen1 | x86_64 | BIOS |
+| Canonical | ubuntu-25_10 | server | x86_64 | EFI |
 | Debian | debian-11 | 11 | x86_64 | BIOS |
 | Debian | debian-11 | 11-gen2 | x86_64 | EFI |
 | Debian | debian-12 | 12-arm64 | aarch64 | EFI |
@@ -244,6 +289,12 @@ system configuration details of specific Azure VM images across all ALAR actions
 | Debian | debian-13 | 13-arm64 | aarch64 | EFI |
 | Debian | debian-13 | 13 | x86_64 | BIOS |
 | Debian | debian-13 | 13-gen2 | x86_64 | EFI |
+| MicrosoftCBLMariner | azure-linux-3 | azure-linux-3-arm64 | aarch64 | EFI |
+| MicrosoftCBLMariner | azure-linux-3 | azure-linux-3-arm64-gen2-fips | aarch64 | EFI |
+| MicrosoftCBLMariner | azure-linux-3 | azure-linux-3-fips | x86_64 | BIOS |
+| MicrosoftCBLMariner | azure-linux-3 | azure-linux-3-gen2-fips | x86_64 | EFI |
+| MicrosoftCBLMariner | azure-linux-3 | azure-linux-3-gen2 | x86_64 | EFI |
+| MicrosoftCBLMariner | azure-linux-3 | azure-linux-3 | x86_64 | BIOS |
 | RedHat | rhel-arm64 | 10_1-arm64 | aarch64 | EFI |
 | RedHat | RHEL | 10_1 | x86_64 | BIOS |
 | RedHat | RHEL | 10-lvm-gen2 | x86_64 | EFI |
@@ -278,32 +329,3 @@ system configuration details of specific Azure VM images across all ALAR actions
 | SUSE | sles-16-0-x86-64 | gen2 | x86_64 | EFI |
 | SUSE | sles-sap-15-sp7 | gen1 | x86_64 | BIOS |
 | SUSE | sles-sap-15-sp7 | gen2 | x86_64 | EFI |
-| Canonical | ubuntu-22_04-lts | server-gen1 | x86_64 | BIOS |
-| Canonical | ubuntu-22_04-lts | server | x86_64 | EFI |
-| Canonical | ubuntu-22_04-lts | ubuntu-minimal-gen1 | x86_64 | BIOS |
-| Canonical | ubuntu-22_04-lts | ubuntu-minimal | x86_64 | EFI |
-| Canonical | ubuntu-22_04-lts | ubuntu-pro-arm64 | aarch64 | EFI |
-| Canonical | ubuntu-22_04-lts | ubuntu-pro-fips-arm64 | aarch64 | EFI |
-| Canonical | ubuntu-22_04-lts | ubuntu-pro-fips | x86_64 | EFI |
-| Canonical | ubuntu-22_04-lts | ubuntu-pro-gen1 | x86_64 | BIOS |
-| Canonical | ubuntu-22_04-lts | ubuntu-pro-minimal-arm64 | aarch64 | EFI |
-| Canonical | ubuntu-22_04-lts | ubuntu-pro-minimal-gen1 | x86_64 | BIOS |
-| Canonical | ubuntu-22_04-lts | ubuntu-pro-minimal | x86_64 | EFI |
-| Canonical | ubuntu-22_04-lts | ubuntu-pro | x86_64 | EFI |
-| Canonical | ubuntu-24_04-lts | minimal-arm64 | aarch64 | EFI |
-| Canonical | ubuntu-24_04-lts | minimal-gen1 | x86_64 | BIOS |
-| Canonical | ubuntu-24_04-lts | minimal | x86_64 | EFI |
-| Canonical | ubuntu-24_04-lts | server-arm64 | aarch64 | EFI |
-| Canonical | ubuntu-24_04-lts | server-gen1 | x86_64 | BIOS |
-| Canonical | ubuntu-24_04-lts | server | x86_64 | EFI |
-| Canonical | ubuntu-24_04-lts | ubuntu-pro-arm64 | aarch64 | EFI |
-| Canonical | ubuntu-24_04-lts | ubuntu-pro-gen1 | x86_64 | BIOS |
-| Canonical | ubuntu-24_04-lts | ubuntu-pro-minimal-arm64 | aarch64 | EFI |
-| Canonical | ubuntu-24_04-lts | ubuntu-pro-minimal | x86_64 | EFI |
-| Canonical | ubuntu-24_04-lts | ubuntu-pro | x86_64 | EFI |
-| Canonical | ubuntu-25_10 | minimal-arm64 | aarch64 | EFI |
-| Canonical | ubuntu-25_10 | minimal-gen1 | x86_64 | BIOS |
-| Canonical | ubuntu-25_10 | minimal | x86_64 | EFI |
-| Canonical | ubuntu-25_10 | server-arm64 | aarch64 | EFI |
-| Canonical | ubuntu-25_10 | server-gen1 | x86_64 | BIOS |
-| Canonical | ubuntu-25_10 | server | x86_64 | EFI |
