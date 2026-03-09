@@ -361,40 +361,71 @@ Key points for bootfix implementation:
 
 ### Matrix: Distro × Generation × Architecture
 
-| Test Case | Distro | Gen | Arch | Action |
-|---|---|---|---|---|
-| 1 | RHEL 7.x | Gen1 | x86_64 | bootfix (no BLS, full EFI grub.cfg) |
-| 2 | RHEL 8.x | Gen1 | x86_64 | bootfix (BLS) |
-| 3 | RHEL 8.x | Gen2 | x86_64 | bootfix (BLS) |
-| 4 | RHEL 9.x | Gen1 | x86_64 | bootfix (BLS) |
-| 5 | RHEL 9.x | Gen2 | x86_64 | bootfix (BLS + NVMe) |
-| 6 | RHEL 9.x | Gen2 | aarch64 | bootfix (BLS + arm64) |
-| 7 | RHEL 10.x | Gen1 | x86_64 | bootfix (BLS) |
-| 8 | RHEL 10.x | Gen2 | x86_64 | bootfix (BLS) |
-| 9 | RHEL 10.x | Gen2 | aarch64 | bootfix (BLS + arm64) |
-| 10 | RHEL raw 8.x | Gen1 | x86_64 | bootfix (no /boot partition) |
-| 11 | RHEL raw 9.x | Gen2 | x86_64 | bootfix (NVMe, no /boot partition) |
-| 12 | Ubuntu 24.04 | Gen1 | x86_64 | bootfix |
-| 13 | Ubuntu 24.04 | Gen2 | x86_64 | bootfix |
-| 14 | Ubuntu 24.04 | Gen2 | aarch64 | bootfix (arm64) |
-| 15 | Debian 11 | Gen1 | x86_64 | bootfix (separate /boot) |
-| 16 | Debian 12 | Gen1 | x86_64 | bootfix |
-| 17 | Debian 12 | Gen2 | x86_64 | bootfix (NVMe) |
-| 18 | Debian 12 | Gen2 | aarch64 | bootfix (arm64, no /boot) |
-| 19 | Debian 13 | Gen1 | x86_64 | bootfix |
-| 20 | Debian 13 | Gen2 | x86_64 | bootfix |
-| 21 | Debian 13 | Gen2 | aarch64 | bootfix (arm64) |
-| 22 | SLES 12 SP5 | Gen2 | x86_64 | bootfix (old GRUB 2.02, full EFI cfg) |
-| 23 | SLES 15 SP6 | Gen2 | x86_64 | bootfix (source-based redirect) |
-| 24 | SLES 15 SP7 | Gen1 | x86_64 | bootfix (btrfs subvols) |
-| 25 | SLES 15 SP7 | Gen2 | x86_64 | bootfix (NVMe) |
-| 26 | SLES 15 SP7 | Gen2 | aarch64 | bootfix (arm64, source redirect) |
-| 27 | SLES 16 | Gen1 | x86_64 | bootfix (btrfs, no /boot partition) |
-| 28 | SLES 16 | Gen2 | x86_64 | bootfix (NVMe, btrfs) |
-| 29 | CentOS 7.x | Gen1 | x86_64 | bootfix (legacy) |
-| 30 | Alma/Rocky 9 | Gen2 | x86_64 | bootfix (BLS) |
-| 31 | RHEL SAP HA 8.4 | Gen2 | x86_64 | bootfix (LVM + BLS) |
-| 32 | RHEL SAP HA 9.6 | Gen2 | x86_64 | bootfix (LVM + BLS) |
+Based on 97 Azure VM images in `vm-data-consolidated.json`.
+
+| # | Publisher | Distro | Gen | Arch | Notes |
+|---|---|---|---|---|---|
+| 1 | almalinux | AlmaLinux 8.10 | Gen1 | x86_64 | BLS |
+| 2 | almalinux | AlmaLinux 8.10 | Gen2 | x86_64 | BLS |
+| 3 | almalinux | AlmaLinux 8.10 | Gen2 | aarch64 | BLS, arm64 |
+| 4 | almalinux | AlmaLinux 9.7 | Gen1 | x86_64 | BLS |
+| 5 | almalinux | AlmaLinux 9.7 | Gen2 | x86_64 | BLS |
+| 6 | almalinux | AlmaLinux 9.7 | Gen2 | aarch64 | BLS, arm64 |
+| 7 | almalinux | AlmaLinux 10.1 | Gen1 | x86_64 | BLS |
+| 8 | almalinux | AlmaLinux 10.1 | Gen2 | x86_64 | BLS |
+| 9 | almalinux | AlmaLinux 10.1 | Gen2 | aarch64 | BLS, arm64 |
+| 10 | Canonical | Ubuntu 20.04 | Gen1 | x86_64 | |
+| 11 | Canonical | Ubuntu 20.04 | Gen2 | x86_64 | |
+| 12 | Canonical | Ubuntu 20.04 | Gen2 | aarch64 | arm64 |
+| 13 | Canonical | Ubuntu 22.04 | Gen1 | x86_64 | |
+| 14 | Canonical | Ubuntu 22.04 | Gen2 | x86_64 | |
+| 15 | Canonical | Ubuntu 22.04 | Gen2 | aarch64 | arm64 |
+| 16 | Canonical | Ubuntu 24.04 | Gen1 | x86_64 | |
+| 17 | Canonical | Ubuntu 24.04 | Gen2 | x86_64 | |
+| 18 | Canonical | Ubuntu 24.04 | Gen2 | aarch64 | arm64 |
+| 19 | Canonical | Ubuntu 25.10 | Gen1 | x86_64 | sudo-rs |
+| 20 | Canonical | Ubuntu 25.10 | Gen2 | x86_64 | sudo-rs |
+| 21 | Canonical | Ubuntu 25.10 | Gen2 | aarch64 | sudo-rs, arm64 |
+| 22 | Debian | Debian 11 | Gen1 | x86_64 | |
+| 23 | Debian | Debian 11 | Gen2 | x86_64 | |
+| 24 | Debian | Debian 12 | Gen1 | x86_64 | |
+| 25 | Debian | Debian 12 | Gen2 | x86_64 | |
+| 26 | Debian | Debian 12 | Gen2 | aarch64 | arm64 |
+| 27 | Debian | Debian 13 | Gen1 | x86_64 | |
+| 28 | Debian | Debian 13 | Gen2 | x86_64 | |
+| 29 | Debian | Debian 13 | Gen2 | aarch64 | arm64 |
+| 30 | MicrosoftCBLMariner | Azure Linux 3.0 | Gen1 | x86_64 | No EFI vendor dir, NVMe, separate /boot |
+| 31 | MicrosoftCBLMariner | Azure Linux 3.0 | Gen2 | x86_64 | No EFI vendor dir, NVMe, separate /boot |
+| 32 | MicrosoftCBLMariner | Azure Linux 3.0 | Gen2 | aarch64 | arm64, no EFI vendor dir |
+| 33 | RedHat | RHEL 7.6 | Gen1 | x86_64 | No BLS, full standalone EFI grub.cfg (DIVERGED) |
+| 34 | RedHat | RHEL 7.8 | Gen1 | x86_64 | No BLS, full standalone EFI grub.cfg (DIVERGED) |
+| 35 | RedHat | RHEL 8.x | Gen1 | x86_64 | BLS |
+| 36 | RedHat | RHEL 8.x | Gen2 | x86_64 | BLS |
+| 37 | RedHat | RHEL 8.10 | Gen2 | aarch64 | BLS, arm64, bls_full_config_efi_only |
+| 38 | RedHat | RHEL 9.x | Gen1 | x86_64 | BLS |
+| 39 | RedHat | RHEL 9.x | Gen2 | x86_64 | BLS |
+| 40 | RedHat | RHEL 9.7 | Gen2 | aarch64 | BLS, arm64 |
+| 41 | RedHat | RHEL 10.1 | Gen1 | x86_64 | BLS |
+| 42 | RedHat | RHEL 10.1 | Gen2 | x86_64 | BLS |
+| 43 | RedHat | RHEL 10.1 | Gen2 | aarch64 | BLS, arm64 |
+| 44 | RedHat | RHEL-HA 8.8 | Gen1 | x86_64 | BLS, LVM |
+| 45 | RedHat | RHEL-SAP-HA 8.4 | Gen2 | x86_64 | BLS, LVM |
+| 46 | RedHat | RHEL-SAP-HA 9.6 | Gen2 | x86_64 | BLS, LVM |
+| 47 | RedHat | RHEL raw 8.x | Gen1 | x86_64 | BLS, no /boot partition |
+| 48 | RedHat | RHEL raw 8.x | Gen2 | x86_64 | BLS |
+| 49 | RedHat | RHEL raw 9.x | Gen1 | x86_64 | BLS |
+| 50 | RedHat | RHEL raw 9.x | Gen2 | x86_64 | BLS |
+| 51 | RedHat | RHEL raw 10.x | Gen1 | x86_64 | BLS |
+| 52 | RedHat | RHEL raw 10.x | Gen2 | x86_64 | BLS |
+| 53 | SUSE | SLES 12 SP5 | Gen2 | x86_64 | normal redirect, old GRUB 2.02 |
+| 54 | SUSE | SLES 15 SP6 | Gen2 | x86_64 | source redirect |
+| 55 | SUSE | SLES 15 SP7 | Gen1 | x86_64 | |
+| 56 | SUSE | SLES 15 SP7 | Gen2 | x86_64 | source redirect |
+| 57 | SUSE | SLES 15 SP7 | Gen2 | aarch64 | arm64, source redirect |
+| 58 | SUSE | SLES 16.0 | Gen1 | x86_64 | btrfs subvolumes |
+| 59 | SUSE | SLES 16.0 | Gen2 | x86_64 | btrfs, source redirect |
+| 60 | SUSE | SLES SAP 15 SP7 | Gen1 | x86_64 | |
+| 61 | SUSE | SLES SAP 15 SP7 | Gen2 | x86_64 | source redirect |
 
 ### Verification Points per Test
 
