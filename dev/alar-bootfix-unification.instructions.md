@@ -126,10 +126,15 @@ safe_update_grub() {
 }
 
 # Resolve the EFI vendor directory
-# Real data shows: RHEL=redhat, Debian=debian, Ubuntu=ubuntu, SUSE=sles (or BOOT)
-# Note: Debian uses "debian" (not in the original grep list — must be included)
+# Real data shows: RHEL=redhat, AlmaLinux=almalinux, Debian=debian, Ubuntu=ubuntu,
+# SUSE=BOOT (no vendor-specific dir), Azure Linux 3=BOOT only (no vendor dir at all)
 get_efi_vendor_dir() {
-    ls /boot/efi/EFI | grep -i -E "centos|redhat|almalinux|rocky|oracle|ubuntu|debian|sles|azurelinux|mariner" | head -1
+    local vendor
+    vendor=$(ls /boot/efi/EFI | grep -i -E "centos|redhat|almalinux|rocky|oracle|ubuntu|debian|sles|azurelinux|mariner" | head -1)
+    if [ -z "$vendor" ] && [ -d /boot/efi/EFI/BOOT ]; then
+        vendor="BOOT"
+    fi
+    echo "$vendor"
 }
 
 # Get grub target based on architecture and boot mode
@@ -166,6 +171,27 @@ get_grub_efi_packages_suse() {
         aarch64) echo "grub2-arm64-efi" ;;
     esac
 }
+
+get_grub_efi_packages_azurelinux() {
+    # Azure Linux 3 uses non-arch-suffixed package names for both x86_64 and aarch64
+    echo "grub2-efi-binary shim"
+}
+
+get_grub_efi_packages_debian() {
+    local arch=$(detect_arch)
+    case "$arch" in
+        x86_64)  echo "grub-efi-amd64-signed" ;;
+        aarch64) echo "grub-efi-arm64-signed" ;;
+    esac
+}
+
+get_grub_efi_packages_ubuntu() {
+    local arch=$(detect_arch)
+    case "$arch" in
+        x86_64)  echo "grub-efi-amd64-signed shim-signed" ;;
+        aarch64) echo "grub-efi-arm64-signed shim-signed" ;;
+    esac
+}
 ```
 
 ### Phase 2: Create `bootfix-impl.sh`
@@ -200,12 +226,30 @@ set prefix=($root)'/boot/grub'
 configfile $prefix/grub.cfg
 ```
 
-SUSE (CRITICAL: uses `source`, NOT `configfile`):
+SUSE 15+ (CRITICAL: uses `source`, NOT `configfile`):
 ```
 search --no-floppy --set prefix --file /grub2/grub.cfg
 set prefix=($prefix)/grub2
 source "${prefix}/grub.cfg"
 ```
+
+SLES 12 SP5 (uses `normal`, NOT `configfile` or `source`):
+```
+set btrfs_relative_path="yes"
+search --fs-uuid --set=root <UUID>
+set prefix=($root)//grub2
+normal
+```
+
+Azure Linux 3 (no EFI vendor dir — grub.cfg at `/boot/efi/boot/grub2/grub.cfg`, no redirect shim):
+- Has no vendor-specific EFI directory, only `BOOT/`
+- The grub.cfg lives directly on the boot partition, not as an EFI redirect
+- No separate EFI grub.cfg to write
+
+RHEL 8+ arm64 (`bls_full_config_efi_only`):
+- arm64 images have a full BLS-enabled grub.cfg directly in the EFI partition
+- No separate `/boot/grub2/grub.cfg` exists — the EFI grub.cfg IS the only config
+- Contains `blscfg` command plus menuentries (hybrid pattern)
 
 **WARNING from real data**: SUSE uses `source` instead of `configfile` in the EFI grub.cfg.
 The plan must NOT assume `configfile` is universal. The redirect shim must match the distro's own pattern.
@@ -299,8 +343,9 @@ In Azure rescue VM scenarios, the rescue VM and the broken disk always share the
 ### Phase 5: Fix `initrd-impl.sh`
 
 1. Add `GRUB_DISABLE_OS_PROBER=true` to ALL `grub2-mkconfig` and `grub-mkconfig` calls
-2. Handle arm64 kernel naming differences (e.g., `vmlinuz` vs `Image`, different `dracut` driver sets — arm64 does NOT need `hv_vmbus`, `hv_storvsc`, `hv_netvsc` as these are built-in on arm64 Azure VMs)
-3. Handle BLS entries — `dracut` on BLS systems may regenerate `/boot/loader/entries/` automatically
+2. Handle arm64 kernel naming differences (e.g., `vmlinuz` vs `Image`, different `dracut` driver sets)
+3. Handle Hyper-V driver inclusion: `hv_vmbus`, `hv_storvsc`, `hv_netvsc` are built-in (not .ko modules) on all Ubuntu 20.04-25.10 (x86 and arm64), all Azure Linux 3, and some SUSE x86 — 48/97 images total. Check `/lib/modules/$(uname -r)/modules.builtin` for `hv_vmbus` before adding drivers with `--add-drivers`
+4. Handle BLS entries — `dracut` on BLS systems may regenerate `/boot/loader/entries/` automatically
 
 ### Phase 6: Fix `kernel-impl.sh`
 
@@ -313,7 +358,7 @@ In Azure rescue VM scenarios, the rescue VM and the broken disk always share the
 
 ### Background
 
-Newer distributions (Fedora 30+, RHEL 9+, AzureLinux 3.x) use BLS where:
+Newer RHEL-based distributions (RHEL 8+, AlmaLinux 8+) use BLS where:
 - `/boot/loader/entries/*.conf` files define individual boot entries
 - `grub2-mkconfig` may or may not manage these
 - `grubby` or `kernel-install` manages BLS entries
@@ -353,7 +398,8 @@ Key points for bootfix implementation:
 - Use `uname -m` to detect architecture — returns `aarch64`
 - GRUB target: `arm64-efi`
 - Serial console: `ttyAMA0` (not `ttyS0`)
-- Hyper-V drivers are built into arm64 kernels — skip `--add-drivers`
+- Hyper-V drivers are built into arm64 kernels — skip `--add-drivers` (also built-in on all Ubuntu x86 and Azure Linux 3 x86)
+- Azure Linux 3 arm64: No EFI vendor directory (BOOT only), uses `tdnf`/`dnf`, uses `dracut` for initramfs
 
 ---
 
