@@ -1,7 +1,15 @@
 # Azure VM Boot Reference Data
 
-Consolidated from 56 Azure VM images collected across 3 regions.
+Consolidated from 97 unique Azure VM images (by `publisher:offer:sku`).
 Use this as context for any AI agent working on ALAR action scripts.
+
+> **Why the numbers differ across files:**
+>
+> | File | Count | What it represents |
+> |---|---|---|
+> | `vm-data-consolidated.json` | **97** | One entry per unique `publisher:offer:sku` — the raw collected data |
+> | `vm-reference-data.md` (this file) | **~20 rows per table** | Summary by distro family — e.g., one row for "RHEL 8+" covers all 8.x SKUs |
+> | `alar-bootfix-unification.instructions.md` | **61** | Test matrix: distro × generation × architecture — one row per test scenario |
 
 ---
 
@@ -14,7 +22,8 @@ Use this as context for any AI agent working on ALAR action scripts.
 | RHEL 7-10 | `grub2-install` | `grub2-mkconfig` | N/A | `grubby` |
 | AlmaLinux 8-10 | `grub2-install` | `grub2-mkconfig` | N/A | `grubby` |
 | Debian 11-13 | `grub-install` | `grub-mkconfig` | `update-grub` | N/A |
-| Ubuntu 24.04 | `grub-install` | `grub-mkconfig` | `update-grub` | N/A |
+| Ubuntu 20.04-25.10 | `grub-install` | `grub-mkconfig` | `update-grub` | N/A |
+| Azure Linux 3 | `grub2-install` | `grub2-mkconfig` | N/A | N/A |
 | SUSE 12-16 | `grub2-install` | `grub2-mkconfig` | N/A | N/A |
 
 ### GRUB Config Paths
@@ -25,6 +34,7 @@ Use this as context for any AI agent working on ALAR action scripts.
 | AlmaLinux | `/boot/grub2/grub.cfg` | `/boot/efi/EFI/almalinux/grub.cfg` | `almalinux` |
 | Debian | `/boot/grub/grub.cfg` | `/boot/efi/EFI/debian/grub.cfg` | `debian` |
 | Ubuntu | `/boot/grub/grub.cfg` | `/boot/efi/EFI/ubuntu/grub.cfg` | `ubuntu` |
+| Azure Linux 3 | `/boot/grub2/grub.cfg` | `/boot/efi/boot/grub2/grub.cfg` | **none** (BOOT only, no vendor dir) |
 | SUSE | `/boot/grub2/grub.cfg` | `/boot/efi/EFI/BOOT/grub.cfg` | `BOOT` (no vendor-specific) |
 
 ### EFI grub.cfg Redirect Method
@@ -50,7 +60,8 @@ Use this as context for any AI agent working on ALAR action scripts.
 | AlmaLinux 9.x | Yes | Yes | Yes |
 | AlmaLinux 10.x | Yes | Yes | Yes |
 | Debian 11-13 | No | No | No |
-| Ubuntu 24.04 | No | No | No |
+| Ubuntu 20.04-25.10 | No | No | No |
+| Azure Linux 3 | No | No | No |
 | SUSE 12-16 | No | No | No |
 
 ### Package Names by Distro × Architecture
@@ -61,6 +72,7 @@ Use this as context for any AI agent working on ALAR action scripts.
 | AlmaLinux | `grub2-efi-x64`, `shim-x64` | `grub2-efi-aa64`, `shim-aa64` |
 | Debian | `grub-efi-amd64-bin`, `grub-efi-amd64-signed`, `shim-signed:amd64` | `grub-efi-arm64-bin`, `grub-efi-arm64-signed`, `shim-signed:arm64` |
 | Ubuntu | `grub-efi-amd64-signed`, `shim-signed` | `grub-efi-arm64-signed`, `shim-signed` |
+| Azure Linux 3 | `grub2-efi-binary`, `shim` | `grub2-efi-binary`, `shim` |
 | SUSE 15+ | `grub2-x86_64-efi` | `grub2-arm64-efi` |
 
 ### EFI Binary Names
@@ -101,7 +113,8 @@ All arm64 hosts have `ttyS0`, `ttyS1`, AND `ttyAMA0` present as devices, but the
 | RHEL 7-10 | xfs | xfs |
 | AlmaLinux 8-10 | xfs | xfs |
 | Debian 11-13 | ext4 | ext4 (when separate) |
-| Ubuntu 24.04 | ext4 | ext4 |
+| Ubuntu 20.04-25.10 | ext4 | ext4 |
+| Azure Linux 3 | ext4 | ext4 (separate /boot) |
 | SUSE 12-15 | xfs | xfs |
 | SUSE 16 | btrfs (with subvolumes) | btrfs (`@/boot/writable` subvol) |
 
@@ -123,6 +136,7 @@ All arm64 hosts have `ttyS0`, `ttyS1`, AND `ttyAMA0` present as devices, but the
 | RHEL 7.x | `yum` | — |
 | RHEL 8+ | `dnf` | `yum` (symlink) |
 | AlmaLinux 8-10 | `dnf` | `yum` |
+| Azure Linux 3 | `tdnf` | `dnf` |
 | Debian/Ubuntu | `apt-get` | — |
 | SUSE | `zypper` | — |
 
@@ -143,30 +157,38 @@ All arm64 hosts have `ttyS0`, `ttyS1`, AND `ttyAMA0` present as devices, but the
 
 | Kernel type | hv_vmbus/storvsc/netvsc | Location |
 |---|---|---|
+| Ubuntu 20.04-25.10 (all) | Built-in | Compiled into azure kernel (48/97 images) |
+| Azure Linux 3 (all) | Built-in | Compiled into kernel |
+| SUSE 15 SP7+ (azure kernel) | Built-in | Compiled into kernel |
+| SUSE 12 SP5 | Minimal | Only `hyperv_fb` loaded |
 | Debian cloud kernels | Loadable modules | `/lib/modules/.../kernel/drivers/hv/` |
-| RHEL 8+ (x86_64) | NOT FOUND as .ko, loaded via lsmod | Likely compiled-in or special path |
+| RHEL 8+ (x86_64) | Loadable | Loaded via lsmod |
 | RHEL (aarch64) | Loadable modules | Standard path |
-| SUSE 15 SP7+ (azure kernel) | NOT FOUND, none loaded | Built into kernel |
-| SUSE 12 SP5 | Only `hyperv_fb` loaded | Minimal module set |
-| Ubuntu 24.04 | NOT FOUND as .ko | Built into azure kernel |
 
 ### sudo Permissions
 
 | Distro | Setuid bits | Binary path |
 |---|---|---|
-| RHEL | `4111` | `/usr/bin/sudo` (or `/bin/sudo`) |
-| Debian/Ubuntu | `4755` | `/usr/bin/sudo` |
+| RHEL/AlmaLinux | `4111` | `/usr/bin/sudo` (or `/bin/sudo`) |
+| Debian | `4755` | `/usr/bin/sudo` |
+| Ubuntu 20.04-24.04 | `4755` | `/usr/bin/sudo` |
+| Ubuntu 25.10 | `4755` | `/usr/lib/cargo/bin/sudo` (sudo-rs via symlink chain) |
+| Azure Linux 3 | `4755` | `/usr/bin/sudo` |
 | SUSE | `4755` | `/usr/bin/sudo` |
 
 ### os-prober Status
 
 | Distro | Installed | GRUB_DISABLE_OS_PROBER needed |
 |---|---|---|
-| RHEL 7-10 | Yes | **Critical** — rescue VM Ubuntu gets added |
-| AlmaLinux 8-10 | Yes | **Critical** — rescue VM Ubuntu gets added |
-| Ubuntu 24.04 | Yes | **Critical** — rescue VM Ubuntu gets added |
-| Debian 11-13 | No (not available) | Not needed |
-| SUSE 12-16 | No (not installed) | Not needed |
+| RHEL 7-10 | Yes (`/bin/os-prober`) | **Critical** — rescue VM Ubuntu gets added |
+| AlmaLinux 8-10 | Yes (`/bin/os-prober`) | **Critical** — rescue VM Ubuntu gets added |
+| Ubuntu 20.04-22.04 (x86) | Yes | **Critical** — all x86 server/minimal/Pro |
+| Ubuntu 20.04-22.04 (arm64) | No | Not needed |
+| Ubuntu 24.04-25.10 (server/Pro) | Yes | **Critical** — server and Pro images |
+| Ubuntu 24.04-25.10 (minimal) | No | Not needed (no os-prober on minimal) |
+| Azure Linux 3 | No | Not needed |
+| Debian 11-13 | No | Not needed |
+| SUSE 12-16 | No | Not needed |
 
 ### GRUB Version by Distro
 
@@ -183,6 +205,8 @@ All arm64 hosts have `ttyS0`, `ttyS1`, AND `ttyAMA0` present as devices, but the
 | Debian 12 | 2.06 |
 | Debian 13 | 2.12 |
 | Ubuntu 24.04 | 2.12 |
+| Ubuntu 25.10 | 2.14 |
+| Azure Linux 3 | 2.06 |
 | SUSE 12 SP5 | 2.02 |
 | SUSE 15 SP6/SP7 | 2.12 |
 | SUSE 16 | 2.12 |
@@ -206,10 +230,12 @@ These must be preserved by the serialconsole action.
 5. **EFI grub.cfg should be a redirect shim** — use `configfile` for RHEL/Debian/Ubuntu, `source` for SUSE
 6. **GRUB path**: `/boot/grub2/` for RHEL/SUSE, `/boot/grub/` for Debian/Ubuntu
 7. **BLS handling** only needed for RHEL 8+ (`isRedHat=true` and `/boot/loader/entries/` exists)
-8. **Serial TTY**: `ttyS0` for x86_64, `ttyAMA0` for aarch64 (all 12 arm64 images confirmed)
-9. **Hyper-V drivers**: Add with `--add-drivers` on x86_64 only; skip on aarch64 (built-in)
+8. **Serial TTY**: `ttyS0` for x86_64, `ttyAMA0` for aarch64 (all 23 arm64 images confirmed)
+9. **Hyper-V drivers**: Skip `--add-drivers` when modules are built-in (all Ubuntu, all Azure Linux 3, all aarch64, some SUSE x86); check `modules.builtin` at runtime
 10. **SLES 16 uses btrfs** with subvolumes — fstab rebuild must account for `@/` subvol entries
 11. **AlmaLinux uses `almalinux` as EFI vendor dir** — not `redhat`; `get_efi_vendor_dir()` must detect this
+12. **Azure Linux 3**: No EFI vendor dir, uses `tdnf`/`dnf`, dracut, NVMe-native with separate `/boot`
+13. **Ubuntu 25.10 uses sudo-rs** — binary at `/usr/lib/cargo/bin/sudo` via symlink chain; resolve with `readlink -f`
 
 ---
 
