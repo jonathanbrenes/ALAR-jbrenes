@@ -199,3 +199,4 @@ Boot mode: use `$efi_part_path` (non-empty = EFI) as primary signal, `/sys/firmw
 - After approval and commit, ask separately whether to push
 - Update `dev/README.md` only for major behavior/workflow changes
 - When outputting markdown content for commits or pull requests, present it inside a fenced `text` code block
+- When listing VM images in tables or reports, always sort by Publisher first, then by Offer/SKU
