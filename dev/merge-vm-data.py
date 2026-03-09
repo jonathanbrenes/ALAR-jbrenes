@@ -3,22 +3,23 @@
 Merge new VM collection results into vm-data-consolidated.json.
 
 Takes one or more results JSON files (already sanitized by collect-vm-info.yml)
-and merges them into the consolidated file. Existing hosts with the same name
-are replaced with the newer data.
+and merges them into the consolidated file. Each VM is keyed by its IMDS
+publisher:offer:sku (e.g., "RedHat:RHEL:7.6"), so the same image collected
+from different inventories always maps to the same entry.
 
 Usage:
-    python merge-vm-data.py 2510.json [-o vm-data-consolidated.json]
+    python merge-vm-data.py results.json [-o vm-data-consolidated.json]
     python merge-vm-data.py region1.json region2.json -o vm-data-consolidated.json
 
 Examples:
-    # Merge new 25.10 data into the default consolidated file:
-    python merge-vm-data.py 2510.json
+    # Merge new results into the default consolidated file:
+    python merge-vm-data.py results.json
 
     # Merge multiple files, writing to a specific output:
     python merge-vm-data.py results_alma.json results_azlinux.json -o vm-data-consolidated.json
 
     # Dry run — show what would change without writing:
-    python merge-vm-data.py 2510.json --dry-run
+    python merge-vm-data.py results.json --dry-run
 """
 
 import json
@@ -31,6 +32,34 @@ def load_json(filepath):
     """Load and return parsed JSON from a file."""
     with open(filepath, "r", encoding="utf-8") as f:
         return json.load(f)
+
+
+def get_sku_key(host_data):
+    """Extract publisher:offer:sku from IMDS compute data."""
+    compute = host_data.get("imds", {}).get("compute", {})
+    publisher = compute.get("publisher", "")
+    offer = compute.get("offer", "")
+    sku = compute.get("sku", "")
+    if publisher and offer and sku:
+        return f"{publisher}:{offer}:{sku}"
+    return None
+
+
+def rekey_hosts(hosts_dict):
+    """Re-key a hosts dict from arbitrary hostnames to publisher:offer:sku.
+
+    Returns a new dict keyed by SKU and a list of any entries that could
+    not be re-keyed (missing IMDS data).
+    """
+    rekeyed = {}
+    skipped = []
+    for name, data in hosts_dict.items():
+        key = get_sku_key(data)
+        if key:
+            rekeyed[key] = data
+        else:
+            skipped.append(name)
+    return rekeyed, skipped
 
 
 def main():
@@ -66,11 +95,19 @@ def main():
     if os.path.isfile(args.output):
         print(f"Loading existing: {args.output}")
         consolidated = load_json(args.output)
+        # Re-key existing data if it uses old hostname-based keys
+        old_hosts = consolidated.get("hosts", {})
+        consolidated["hosts"], skipped = rekey_hosts(old_hosts)
+        if skipped:
+            print(f"  Warning: {len(skipped)} entries without IMDS data (kept as-is): {skipped}")
+            for name in skipped:
+                consolidated["hosts"][name] = old_hosts[name]
+        if len(consolidated["hosts"]) != len(old_hosts):
+            print(f"  Re-keyed: {len(old_hosts)} entries -> {len(consolidated['hosts'])} unique SKUs")
     else:
         print(f"Creating new: {args.output}")
         consolidated = {"_meta": {}, "hosts": {}}
 
-    existing_hosts = set(consolidated.get("hosts", {}).keys())
     added = []
     updated = []
 
@@ -81,11 +118,15 @@ def main():
         new_hosts = new_data.get("hosts", {})
 
         for name, host_data in new_hosts.items():
-            if name in consolidated["hosts"]:
-                updated.append(name)
+            key = get_sku_key(host_data)
+            if not key:
+                print(f"  Warning: skipping {name} — no IMDS publisher:offer:sku")
+                continue
+            if key in consolidated["hosts"]:
+                updated.append(key)
             else:
-                added.append(name)
-            consolidated["hosts"][name] = host_data
+                added.append(key)
+            consolidated["hosts"][key] = host_data
 
         print(f"  {len(new_hosts)} hosts from {filepath}")
 
@@ -98,7 +139,7 @@ def main():
 
     # Report
     print(f"\nSummary:")
-    print(f"  Total hosts: {total}")
+    print(f"  Total images: {total}")
     if added:
         print(f"  Added ({len(added)}): {', '.join(sorted(added))}")
     if updated:

@@ -4,7 +4,7 @@
     "total_hosts": 97
   },
   "hosts": {
-    "debian-11-gen2": {
+    "Debian:debian-11:11-gen2": {
       "auditd_action": {
         "config": [
           "not found"
@@ -300,7 +300,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:30:41Z",
-        "hostname": "debian-11-gen2",
         "kernel": "5.10.0-38-cloud-amd64",
         "os_release": [
           "PRETTY_NAME=\"Debian GNU/Linux 11 (bullseye)\"",
@@ -529,7 +528,7 @@
         ]
       }
     },
-    "debian-12-gen1": {
+    "Debian:debian-12:12": {
       "auditd_action": {
         "config": [
           "not found"
@@ -833,7 +832,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:30:40Z",
-        "hostname": "debian-12-gen1",
         "kernel": "6.1.0-43-cloud-amd64",
         "os_release": [
           "PRETTY_NAME=\"Debian GNU/Linux 12 (bookworm)\"",
@@ -1075,7 +1073,7 @@
         ]
       }
     },
-    "debian-13-arm64": {
+    "Debian:debian-13:13-arm64": {
       "auditd_action": {
         "config": [
           "not found"
@@ -1381,7 +1379,6 @@
       "identity": {
         "arch": "aarch64",
         "collected_at": "2026-03-05T23:30:41Z",
-        "hostname": "debian-13-arm64",
         "kernel": "6.12.73+deb13-cloud-arm64",
         "os_release": [
           "PRETTY_NAME=\"Debian GNU/Linux 13 (trixie)\"",
@@ -1625,7 +1622,7 @@
         ]
       }
     },
-    "debian-13-gen2": {
+    "Debian:debian-13:13-gen2": {
       "auditd_action": {
         "config": [
           "not found"
@@ -1928,7 +1925,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:30:41Z",
-        "hostname": "debian-13-gen2",
         "kernel": "6.12.73+deb13-cloud-amd64",
         "os_release": [
           "PRETTY_NAME=\"Debian GNU/Linux 13 (trixie)\"",
@@ -2171,7 +2167,7 @@
         ]
       }
     },
-    "rhel-10-1-arm64": {
+    "RedHat:rhel-arm64:10_1-arm64": {
       "auditd_action": {
         "config": [
           "#",
@@ -2490,7 +2486,6 @@
       "identity": {
         "arch": "aarch64",
         "collected_at": "2026-03-05T23:30:40Z",
-        "hostname": "rhel-10-1-arm64",
         "kernel": "6.12.0-124.38.1.el10_1.aarch64",
         "os_release": [
           "NAME=\"Red Hat Enterprise Linux\"",
@@ -2665,7 +2660,7 @@
         ]
       }
     },
-    "rhel-10-1-gen1": {
+    "RedHat:RHEL:10_1": {
       "auditd_action": {
         "config": [
           "#",
@@ -2992,7 +2987,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:30:41Z",
-        "hostname": "rhel-10-1-gen1",
         "kernel": "6.12.0-124.38.1.el10_1.x86_64",
         "os_release": [
           "NAME=\"Red Hat Enterprise Linux\"",
@@ -3166,7 +3160,7 @@
         ]
       }
     },
-    "rhel-10-gen2": {
+    "RedHat:RHEL:10-lvm-gen2": {
       "auditd_action": {
         "config": [
           "#",
@@ -3494,7 +3488,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:30:42Z",
-        "hostname": "rhel-10-gen2",
         "kernel": "6.12.0-124.38.1.el10_1.x86_64",
         "os_release": [
           "NAME=\"Red Hat Enterprise Linux\"",
@@ -3669,7 +3662,7 @@
         ]
       }
     },
-    "rhel-8-9-gen1": {
+    "RedHat:RHEL:8_9": {
       "auditd_action": {
         "config": [
           "#",
@@ -4015,7 +4008,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:30:40Z",
-        "hostname": "rhel-8-9-gen1",
         "kernel": "4.18.0-513.18.1.el8_9.x86_64",
         "os_release": [
           "NAME=\"Red Hat Enterprise Linux\"",
@@ -4198,7 +4190,7 @@
         ]
       }
     },
-    "rhel-9-7-arm64": {
+    "RedHat:rhel-arm64:9_7-arm64": {
       "auditd_action": {
         "config": [
           "#",
@@ -4516,7 +4508,6 @@
       "identity": {
         "arch": "aarch64",
         "collected_at": "2026-03-05T23:30:40Z",
-        "hostname": "rhel-9-7-arm64",
         "kernel": "5.14.0-611.24.1.el9_7.aarch64",
         "os_release": [
           "NAME=\"Red Hat Enterprise Linux\"",
@@ -4690,7 +4681,7 @@
         ]
       }
     },
-    "rhel-9-7-gen1": {
+    "RedHat:RHEL:9_7": {
       "auditd_action": {
         "config": [
           "#",
@@ -5014,7 +5005,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:30:40Z",
-        "hostname": "rhel-9-7-gen1",
         "kernel": "5.14.0-611.24.1.el9_7.x86_64",
         "os_release": [
           "NAME=\"Red Hat Enterprise Linux\"",
@@ -5188,7 +5178,7 @@
         ]
       }
     },
-    "rhel-raw-10-1-gen1": {
+    "RedHat:rhel-raw:10_1": {
       "auditd_action": {
         "config": [
           "#",
@@ -5491,7 +5481,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:30:42Z",
-        "hostname": "rhel-raw-10-1-gen1",
         "kernel": "6.12.0-124.38.1.el10_1.x86_64",
         "os_release": [
           "NAME=\"Red Hat Enterprise Linux\"",
@@ -5645,7 +5634,7 @@
         ]
       }
     },
-    "rhel-raw-8-9-gen1": {
+    "RedHat:rhel-raw:8_9": {
       "auditd_action": {
         "config": [
           "#",
@@ -5994,7 +5983,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:30:40Z",
-        "hostname": "rhel-raw-8-9-gen1",
         "kernel": "4.18.0-513.11.1.el8_9.x86_64",
         "os_release": [
           "NAME=\"Red Hat Enterprise Linux\"",
@@ -6162,7 +6150,7 @@
         ]
       }
     },
-    "rhel-raw-8-gen1": {
+    "RedHat:rhel-raw:8-raw": {
       "auditd_action": {
         "config": [
           "#",
@@ -6504,7 +6492,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:30:40Z",
-        "hostname": "rhel-raw-8-gen1",
         "kernel": "4.18.0-553.56.1.el8_10.x86_64",
         "os_release": [
           "NAME=\"Red Hat Enterprise Linux\"",
@@ -6667,7 +6654,7 @@
         "waagent_sudoers": []
       }
     },
-    "rhel-raw-89-gen2": {
+    "RedHat:rhel-raw:89-gen2": {
       "auditd_action": {
         "config": [
           "#",
@@ -7016,7 +7003,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:30:40Z",
-        "hostname": "rhel-raw-89-gen2",
         "kernel": "4.18.0-513.11.1.el8_9.x86_64",
         "os_release": [
           "NAME=\"Red Hat Enterprise Linux\"",
@@ -7184,7 +7170,7 @@
         ]
       }
     },
-    "rhel-raw-9-gen1": {
+    "RedHat:rhel-raw:9-raw": {
       "auditd_action": {
         "config": [
           "#",
@@ -7505,7 +7491,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:30:42Z",
-        "hostname": "rhel-raw-9-gen1",
         "kernel": "5.14.0-611.24.1.el9_7.x86_64",
         "os_release": [
           "NAME=\"Red Hat Enterprise Linux\"",
@@ -7663,7 +7648,7 @@
         ]
       }
     },
-    "rhel-raw-9-gen2": {
+    "RedHat:rhel-raw:9-raw-gen2": {
       "auditd_action": {
         "config": [
           "#",
@@ -7987,7 +7972,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:30:40Z",
-        "hostname": "rhel-raw-9-gen2",
         "kernel": "5.14.0-611.24.1.el9_7.x86_64",
         "os_release": [
           "NAME=\"Red Hat Enterprise Linux\"",
@@ -8145,7 +8129,7 @@
         ]
       }
     },
-    "rhel-sap-ha-84-gen2": {
+    "RedHat:RHEL-SAP-HA:84sapha-gen2": {
       "auditd_action": {
         "config": [
           "#",
@@ -8480,7 +8464,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:30:42Z",
-        "hostname": "rhel-sap-ha-84-gen2",
         "kernel": "4.18.0-305.150.1.el8_4.x86_64",
         "os_release": [
           "NAME=\"Red Hat Enterprise Linux\"",
@@ -8660,7 +8643,7 @@
         "waagent_sudoers": []
       }
     },
-    "sles-15-sp6-gen2": {
+    "SUSE:sles-15-sp6:gen2": {
       "auditd_action": {
         "config": [
           "#",
@@ -8983,7 +8966,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:30:41Z",
-        "hostname": "sles-15-sp6-gen2",
         "kernel": "6.4.0-150600.8.58-azure",
         "os_release": [
           "NAME=\"SLES\"",
@@ -9160,7 +9142,7 @@
         ]
       }
     },
-    "sles-15-sp7-arm64": {
+    "SUSE:sles-15-sp7-arm64:gen2": {
       "auditd_action": {
         "config": [
           "#",
@@ -9491,7 +9473,6 @@
       "identity": {
         "arch": "aarch64",
         "collected_at": "2026-03-05T23:30:41Z",
-        "hostname": "sles-15-sp7-arm64",
         "kernel": "6.4.0-150700.53.28-default",
         "os_release": [
           "NAME=\"SLES\"",
@@ -9672,7 +9653,7 @@
         ]
       }
     },
-    "sles-16-gen2": {
+    "SUSE:sles-16-0-x86-64:gen2": {
       "auditd_action": {
         "config": [
           "#",
@@ -10014,7 +9995,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:30:41Z",
-        "hostname": "sles-16-gen2",
         "kernel": "6.12.0-160000.9-default",
         "os_release": [
           "# The NAME and PRETTY_NAME fields have been chosen to state compatibility between our products.",
@@ -10212,7 +10192,7 @@
         ]
       }
     },
-    "sles-sap-15-sp7-gen2": {
+    "SUSE:sles-sap-15-sp7:gen2": {
       "auditd_action": {
         "config": [
           "#",
@@ -10548,7 +10528,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:30:42Z",
-        "hostname": "sles-sap-15-sp7-gen2",
         "kernel": "6.4.0-150700.53.28-default",
         "os_release": [
           "NAME=\"SLES\"",
@@ -10730,7 +10709,7 @@
         ]
       }
     },
-    "debian-11-gen1": {
+    "Debian:debian-11:11": {
       "auditd_action": {
         "config": [
           "not found"
@@ -11028,7 +11007,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:27:07Z",
-        "hostname": "debian-11-gen1",
         "kernel": "5.10.0-38-cloud-amd64",
         "os_release": [
           "PRETTY_NAME=\"Debian GNU/Linux 11 (bullseye)\"",
@@ -11258,7 +11236,7 @@
         ]
       }
     },
-    "debian-12-arm64": {
+    "Debian:debian-12:12-arm64": {
       "auditd_action": {
         "config": [
           "not found"
@@ -11565,7 +11543,6 @@
       "identity": {
         "arch": "aarch64",
         "collected_at": "2026-03-05T23:27:08Z",
-        "hostname": "debian-12-arm64",
         "kernel": "6.1.0-43-cloud-arm64",
         "os_release": [
           "PRETTY_NAME=\"Debian GNU/Linux 12 (bookworm)\"",
@@ -11808,7 +11785,7 @@
         ]
       }
     },
-    "debian-12-gen2": {
+    "Debian:debian-12:12-gen2": {
       "auditd_action": {
         "config": [
           "not found"
@@ -12112,7 +12089,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:27:08Z",
-        "hostname": "debian-12-gen2",
         "kernel": "6.1.0-43-cloud-amd64",
         "os_release": [
           "PRETTY_NAME=\"Debian GNU/Linux 12 (bookworm)\"",
@@ -12354,7 +12330,7 @@
         ]
       }
     },
-    "debian-13-gen1": {
+    "Debian:debian-13:13": {
       "auditd_action": {
         "config": [
           "not found"
@@ -12654,7 +12630,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:27:08Z",
-        "hostname": "debian-13-gen1",
         "kernel": "6.12.73+deb13-cloud-amd64",
         "os_release": [
           "PRETTY_NAME=\"Debian GNU/Linux 13 (trixie)\"",
@@ -12897,7 +12872,7 @@
         ]
       }
     },
-    "rhel-8-gen2": {
+    "RedHat:RHEL:8-lvm-gen2": {
       "auditd_action": {
         "config": [
           "#",
@@ -13233,7 +13208,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:27:07Z",
-        "hostname": "rhel-8-gen2",
         "kernel": "4.18.0-553.el8_10.x86_64",
         "os_release": [
           "NAME=\"Red Hat Enterprise Linux\"",
@@ -13412,7 +13386,7 @@
         ]
       }
     },
-    "rhel-9-gen2": {
+    "RedHat:RHEL:9-lvm-gen2": {
       "auditd_action": {
         "config": [
           "#",
@@ -13736,7 +13710,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:27:07Z",
-        "hostname": "rhel-9-gen2",
         "kernel": "5.14.0-611.24.1.el9_7.x86_64",
         "os_release": [
           "NAME=\"Red Hat Enterprise Linux\"",
@@ -13910,7 +13883,7 @@
         ]
       }
     },
-    "rhel-ha-8-8-gen1": {
+    "RedHat:RHEL-HA:8_8": {
       "auditd_action": {
         "config": [
           "#",
@@ -14259,7 +14232,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:27:09Z",
-        "hostname": "rhel-ha-8-8-gen1",
         "kernel": "4.18.0-477.36.1.el8_8.x86_64",
         "os_release": [
           "NAME=\"Red Hat Enterprise Linux\"",
@@ -14442,7 +14414,7 @@
         ]
       }
     },
-    "rhel-raw-10-gen1": {
+    "RedHat:rhel-raw:10-raw": {
       "auditd_action": {
         "config": [
           "#",
@@ -14745,7 +14717,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:27:07Z",
-        "hostname": "rhel-raw-10-gen1",
         "kernel": "6.12.0-124.38.1.el10_1.x86_64",
         "os_release": [
           "NAME=\"Red Hat Enterprise Linux\"",
@@ -14899,7 +14870,7 @@
         ]
       }
     },
-    "rhel-raw-10-gen2": {
+    "RedHat:rhel-raw:10-raw-gen2": {
       "auditd_action": {
         "config": [
           "#",
@@ -15203,7 +15174,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:27:09Z",
-        "hostname": "rhel-raw-10-gen2",
         "kernel": "6.12.0-124.38.1.el10_1.x86_64",
         "os_release": [
           "NAME=\"Red Hat Enterprise Linux\"",
@@ -15357,7 +15327,7 @@
         ]
       }
     },
-    "rhel-raw-8-4-gen1": {
+    "RedHat:rhel-raw:8_4": {
       "auditd_action": {
         "config": [
           "#",
@@ -15712,7 +15682,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:27:07Z",
-        "hostname": "rhel-raw-8-4-gen1",
         "kernel": "4.18.0-305.40.1.el8_4.x86_64",
         "os_release": [
           "NAME=\"Red Hat Enterprise Linux\"",
@@ -15876,7 +15845,7 @@
         "waagent_sudoers": []
       }
     },
-    "rhel-raw-8-gen2": {
+    "RedHat:rhel-raw:8-raw-gen2": {
       "auditd_action": {
         "config": [
           "#",
@@ -16212,7 +16181,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:27:07Z",
-        "hostname": "rhel-raw-8-gen2",
         "kernel": "4.18.0-553.56.1.el8_10.x86_64",
         "os_release": [
           "NAME=\"Red Hat Enterprise Linux\"",
@@ -16375,7 +16343,7 @@
         "waagent_sudoers": []
       }
     },
-    "rhel-raw-9-5-gen1": {
+    "RedHat:rhel-raw:9_5": {
       "auditd_action": {
         "config": [
           "#",
@@ -16709,7 +16677,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:27:07Z",
-        "hostname": "rhel-raw-9-5-gen1",
         "kernel": "5.14.0-503.15.1.el9_5.x86_64",
         "os_release": [
           "NAME=\"Red Hat Enterprise Linux\"",
@@ -16870,7 +16837,7 @@
         "waagent_sudoers": []
       }
     },
-    "rhel-sap-ha-96-gen2": {
+    "RedHat:RHEL-SAP-HA:96sapha-gen2": {
       "auditd_action": {
         "config": [
           "#",
@@ -17196,7 +17163,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:27:09Z",
-        "hostname": "rhel-sap-ha-96-gen2",
         "kernel": "5.14.0-570.79.1.el9_6.x86_64",
         "os_release": [
           "NAME=\"Red Hat Enterprise Linux\"",
@@ -17371,7 +17337,7 @@
         ]
       }
     },
-    "sles-15-sp7-basic-gen2": {
+    "SUSE:sles-15-sp7-basic:gen2": {
       "auditd_action": {
         "config": [
           "#",
@@ -17693,7 +17659,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:27:08Z",
-        "hostname": "sles-15-sp7-basic-gen2",
         "kernel": "6.4.0-150700.20.24-azure",
         "os_release": [
           "NAME=\"SLES\"",
@@ -17874,7 +17839,7 @@
         ]
       }
     },
-    "sles-15-sp7-gen1": {
+    "SUSE:sles-15-sp7:gen1": {
       "auditd_action": {
         "config": [
           "#",
@@ -18200,7 +18165,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:27:08Z",
-        "hostname": "sles-15-sp7-gen1",
         "kernel": "6.4.0-150700.20.24-azure",
         "os_release": [
           "NAME=\"SLES\"",
@@ -18381,7 +18345,7 @@
         ]
       }
     },
-    "sles-16-gen1": {
+    "SUSE:sles-16-0-x86-64:gen1": {
       "auditd_action": {
         "config": [
           "#",
@@ -18721,7 +18685,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:27:09Z",
-        "hostname": "sles-16-gen1",
         "kernel": "6.12.0-160000.9-default",
         "os_release": [
           "# The NAME and PRETTY_NAME fields have been chosen to state compatibility between our products.",
@@ -18919,7 +18882,7 @@
         ]
       }
     },
-    "sles-sap-15-sp7-gen1": {
+    "SUSE:sles-sap-15-sp7:gen1": {
       "auditd_action": {
         "config": [
           "#",
@@ -19255,7 +19218,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-05T23:27:08Z",
-        "hostname": "sles-sap-15-sp7-gen1",
         "kernel": "6.4.0-150700.53.28-default",
         "os_release": [
           "NAME=\"SLES\"",
@@ -19437,7 +19399,7 @@
         ]
       }
     },
-    "almalinux-arm-10-arm64-64k-gen2-arm64-gen2-latest": {
+    "almalinux:almalinux-arm:10-arm64-64k-gen2": {
       "auditd_action": {
         "config": [
           "#",
@@ -19752,7 +19714,6 @@
       "identity": {
         "arch": "aarch64",
         "collected_at": "2026-03-08T01:12:15Z",
-        "hostname": "almalinux-arm-10-arm64-64k-gen2-arm64-gen2-latest",
         "kernel": "6.12.0-124.20.1.el10_1.aarch64+64k",
         "os_release": [
           "NAME=\"AlmaLinux\"",
@@ -19914,7 +19875,7 @@
         ]
       }
     },
-    "almalinux-arm-10-arm64-gen2-arm64-gen2-latest": {
+    "almalinux:almalinux-arm:10-arm64-gen2": {
       "auditd_action": {
         "config": [
           "#",
@@ -20229,7 +20190,6 @@
       "identity": {
         "arch": "aarch64",
         "collected_at": "2026-03-08T01:12:15Z",
-        "hostname": "almalinux-arm-10-arm64-gen2-arm64-gen2-latest",
         "kernel": "6.12.0-124.20.1.el10_1.aarch64",
         "os_release": [
           "NAME=\"AlmaLinux\"",
@@ -20391,7 +20351,7 @@
         ]
       }
     },
-    "almalinux-arm-8-arm-gen2-arm64-gen2-latest": {
+    "almalinux:almalinux-arm:8-arm-gen2": {
       "auditd_action": {
         "config": [
           "#",
@@ -20940,7 +20900,6 @@
       "identity": {
         "arch": "aarch64",
         "collected_at": "2026-03-08T18:01:03Z",
-        "hostname": "almalinux-arm-8-arm-gen2-arm64-gen2-latest",
         "kernel": "4.18.0-553.72.1.el8_10.aarch64",
         "os_release": [
           "NAME=\"AlmaLinux\"",
@@ -21113,7 +21072,7 @@
         ]
       }
     },
-    "almalinux-arm-9-arm-64k-gen2-arm64-gen2-latest": {
+    "almalinux:almalinux-arm:9-arm-64k-gen2": {
       "auditd_action": {
         "config": [
           "#",
@@ -21443,7 +21402,6 @@
       "identity": {
         "arch": "aarch64",
         "collected_at": "2026-03-08T01:12:15Z",
-        "hostname": "almalinux-arm-9-arm-64k-gen2-arm64-gen2-latest",
         "kernel": "5.14.0-611.13.1.el9_7.aarch64+64k",
         "os_release": [
           "NAME=\"AlmaLinux\"",
@@ -21604,7 +21562,7 @@
         ]
       }
     },
-    "almalinux-arm-9-arm-gen2-arm64-gen2-latest": {
+    "almalinux:almalinux-arm:9-arm-gen2": {
       "auditd_action": {
         "config": [
           "#",
@@ -21934,7 +21892,6 @@
       "identity": {
         "arch": "aarch64",
         "collected_at": "2026-03-08T01:12:15Z",
-        "hostname": "almalinux-arm-9-arm-gen2-arm64-gen2-latest",
         "kernel": "5.14.0-611.13.1.el9_7.aarch64",
         "os_release": [
           "NAME=\"AlmaLinux\"",
@@ -22095,7 +22052,7 @@
         ]
       }
     },
-    "almalinux-x86-64-10-gen1-x64-gen1-latest": {
+    "almalinux:almalinux-x86_64:10-gen1": {
       "auditd_action": {
         "config": [
           "#",
@@ -22410,7 +22367,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T01:12:15Z",
-        "hostname": "almalinux-x86-64-10-gen1-x64-gen1-latest",
         "kernel": "6.12.0-124.20.1.el10_1.x86_64",
         "os_release": [
           "NAME=\"AlmaLinux\"",
@@ -22571,7 +22527,7 @@
         ]
       }
     },
-    "almalinux-x86-64-10-gen2-x64-gen2-latest": {
+    "almalinux:almalinux-x86_64:10-gen2": {
       "auditd_action": {
         "config": [
           "#",
@@ -22887,7 +22843,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T01:12:15Z",
-        "hostname": "almalinux-x86-64-10-gen2-x64-gen2-latest",
         "kernel": "6.12.0-124.20.1.el10_1.x86_64",
         "os_release": [
           "NAME=\"AlmaLinux\"",
@@ -23048,7 +23003,7 @@
         ]
       }
     },
-    "almalinux-x86-64-8-gen1-x64-gen1-latest": {
+    "almalinux:almalinux-x86_64:8-gen1": {
       "auditd_action": {
         "config": [
           "#",
@@ -23386,7 +23341,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T01:12:15Z",
-        "hostname": "almalinux-x86-64-8-gen1-x64-gen1-latest",
         "kernel": "4.18.0-553.72.1.el8_10.x86_64",
         "os_release": [
           "NAME=\"AlmaLinux\"",
@@ -23555,7 +23509,7 @@
         ]
       }
     },
-    "almalinux-x86-64-8-gen2-x64-gen2-latest": {
+    "almalinux:almalinux-x86_64:8-gen2": {
       "auditd_action": {
         "config": [
           "#",
@@ -23893,7 +23847,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T01:12:15Z",
-        "hostname": "almalinux-x86-64-8-gen2-x64-gen2-latest",
         "kernel": "4.18.0-553.72.1.el8_10.x86_64",
         "os_release": [
           "NAME=\"AlmaLinux\"",
@@ -24062,7 +24015,7 @@
         ]
       }
     },
-    "almalinux-x86-64-9-gen1-x64-gen1-latest": {
+    "almalinux:almalinux-x86_64:9-gen1": {
       "auditd_action": {
         "config": [
           "#",
@@ -24398,7 +24351,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T01:12:16Z",
-        "hostname": "almalinux-x86-64-9-gen1-x64-gen1-latest",
         "kernel": "5.14.0-611.13.1.el9_7.x86_64",
         "os_release": [
           "NAME=\"AlmaLinux\"",
@@ -24559,7 +24511,7 @@
         ]
       }
     },
-    "almalinux-x86-64-9-gen2-x64-gen2-latest": {
+    "almalinux:almalinux-x86_64:9-gen2": {
       "auditd_action": {
         "config": [
           "#",
@@ -24892,7 +24844,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T01:12:16Z",
-        "hostname": "almalinux-x86-64-9-gen2-x64-gen2-latest",
         "kernel": "5.14.0-611.13.1.el9_7.x86_64",
         "os_release": [
           "NAME=\"AlmaLinux\"",
@@ -25052,7 +25003,7 @@
         ]
       }
     },
-    "0001-com-ubuntu-minimal-focal-minimal-20-04-lts-gen2-x64-gen2-la": {
+    "Canonical:0001-com-ubuntu-minimal-focal:minimal-20_04-lts-gen2": {
       "auditd_action": {
         "config": [
           "not found"
@@ -25388,7 +25339,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T02:14:16Z",
-        "hostname": "0001-com-ubuntu-minimal-focal-minimal-20-04-lts-gen2-x64-gen2-la",
         "kernel": "5.15.0-1089-azure",
         "os_release": [
           "NAME=\"Ubuntu\"",
@@ -25629,7 +25579,7 @@
         ]
       }
     },
-    "0001-com-ubuntu-minimal-focal-minimal-20-04-lts-x64-gen1-latest": {
+    "Canonical:0001-com-ubuntu-minimal-focal:minimal-20_04-lts": {
       "auditd_action": {
         "config": [
           "not found"
@@ -25961,7 +25911,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T02:14:16Z",
-        "hostname": "0001-com-ubuntu-minimal-focal-minimal-20-04-lts-x64-gen1-latest",
         "kernel": "5.15.0-1089-azure",
         "os_release": [
           "NAME=\"Ubuntu\"",
@@ -26201,7 +26150,7 @@
         ]
       }
     },
-    "0001-com-ubuntu-minimal-jammy-minimal-22-04-lts-gen2-x64-gen2-la": {
+    "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts-gen2": {
       "auditd_action": {
         "config": [
           "not found"
@@ -26535,7 +26484,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T02:14:16Z",
-        "hostname": "0001-com-ubuntu-minimal-jammy-minimal-22-04-lts-gen2-x64-gen2-la",
         "kernel": "6.8.0-1044-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 22.04.5 LTS\"",
@@ -26764,7 +26712,7 @@
         ]
       }
     },
-    "0001-com-ubuntu-minimal-jammy-minimal-22-04-lts-x64-gen1-latest": {
+    "Canonical:0001-com-ubuntu-minimal-jammy:minimal-22_04-lts": {
       "auditd_action": {
         "config": [
           "not found"
@@ -27096,7 +27044,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T02:14:16Z",
-        "hostname": "0001-com-ubuntu-minimal-jammy-minimal-22-04-lts-x64-gen1-latest",
         "kernel": "6.8.0-1044-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 22.04.5 LTS\"",
@@ -27325,7 +27272,7 @@
         ]
       }
     },
-    "0001-com-ubuntu-server-focal-20-04-lts-gen2-x64-gen2-latest": {
+    "Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2": {
       "auditd_action": {
         "config": [
           "not found"
@@ -27664,7 +27611,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T02:14:16Z",
-        "hostname": "0001-com-ubuntu-server-focal-20-04-lts-gen2-x64-gen2-latest",
         "kernel": "5.15.0-1089-azure",
         "os_release": [
           "NAME=\"Ubuntu\"",
@@ -27912,7 +27858,7 @@
         ]
       }
     },
-    "0001-com-ubuntu-server-focal-20-04-lts-x64-gen1-latest": {
+    "Canonical:0001-com-ubuntu-server-focal:20_04-lts": {
       "auditd_action": {
         "config": [
           "not found"
@@ -28251,7 +28197,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T02:14:16Z",
-        "hostname": "0001-com-ubuntu-server-focal-20-04-lts-x64-gen1-latest",
         "kernel": "5.15.0-1089-azure",
         "os_release": [
           "NAME=\"Ubuntu\"",
@@ -28499,7 +28444,7 @@
         ]
       }
     },
-    "0001-com-ubuntu-server-jammy-22-04-lts-gen2-x64-gen2-latest": {
+    "Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2": {
       "auditd_action": {
         "config": [
           "not found"
@@ -28828,7 +28773,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T02:14:15Z",
-        "hostname": "0001-com-ubuntu-server-jammy-22-04-lts-gen2-x64-gen2-latest",
         "kernel": "6.8.0-1044-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 22.04.5 LTS\"",
@@ -29063,7 +29007,7 @@
         ]
       }
     },
-    "0001-com-ubuntu-server-jammy-22-04-lts-x64-gen1-latest": {
+    "Canonical:0001-com-ubuntu-server-jammy:22_04-lts": {
       "auditd_action": {
         "config": [
           "not found"
@@ -29391,7 +29335,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T02:14:15Z",
-        "hostname": "0001-com-ubuntu-server-jammy-22-04-lts-x64-gen1-latest",
         "kernel": "6.8.0-1044-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 22.04.5 LTS\"",
@@ -29626,7 +29569,7 @@
         ]
       }
     },
-    "ubuntu-22-04-lts-server-gen1-x64-gen1-latest": {
+    "Canonical:ubuntu-22_04-lts:server-gen1": {
       "auditd_action": {
         "config": [
           "not found"
@@ -29958,7 +29901,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T02:14:15Z",
-        "hostname": "ubuntu-22-04-lts-server-gen1-x64-gen1-latest",
         "kernel": "6.8.0-1044-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 22.04.5 LTS\"",
@@ -30194,7 +30136,7 @@
         ]
       }
     },
-    "ubuntu-22-04-lts-server-x64-gen2-latest": {
+    "Canonical:ubuntu-22_04-lts:server": {
       "auditd_action": {
         "config": [
           "not found"
@@ -30528,7 +30470,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T02:14:15Z",
-        "hostname": "ubuntu-22-04-lts-server-x64-gen2-latest",
         "kernel": "6.8.0-1044-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 22.04.5 LTS\"",
@@ -30764,7 +30705,7 @@
         ]
       }
     },
-    "ubuntu-22-04-lts-ubuntu-minimal-gen1-x64-gen1-latest": {
+    "Canonical:ubuntu-22_04-lts:ubuntu-minimal-gen1": {
       "auditd_action": {
         "config": [
           "not found"
@@ -31096,7 +31037,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T02:14:15Z",
-        "hostname": "ubuntu-22-04-lts-ubuntu-minimal-gen1-x64-gen1-latest",
         "kernel": "6.8.0-1044-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 22.04.5 LTS\"",
@@ -31325,7 +31265,7 @@
         ]
       }
     },
-    "ubuntu-22-04-lts-ubuntu-minimal-x64-gen2-latest": {
+    "Canonical:ubuntu-22_04-lts:ubuntu-minimal": {
       "auditd_action": {
         "config": [
           "not found"
@@ -31658,7 +31598,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T02:14:15Z",
-        "hostname": "ubuntu-22-04-lts-ubuntu-minimal-x64-gen2-latest",
         "kernel": "6.8.0-1044-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 22.04.5 LTS\"",
@@ -31887,7 +31826,7 @@
         ]
       }
     },
-    "ubuntu-22-04-lts-ubuntu-pro-fips-x64-gen2-latest": {
+    "Canonical:ubuntu-22_04-lts:ubuntu-pro-fips": {
       "auditd_action": {
         "config": [
           "not found"
@@ -32238,7 +32177,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T02:14:16Z",
-        "hostname": "ubuntu-22-04-lts-ubuntu-pro-fips-x64-gen2-latest",
         "kernel": "5.15.0-1102-azure-fips",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 22.04.5 LTS\"",
@@ -32477,7 +32415,7 @@
         ]
       }
     },
-    "ubuntu-22-04-lts-ubuntu-pro-gen1-x64-gen1-latest": {
+    "Canonical:ubuntu-22_04-lts:ubuntu-pro-gen1": {
       "auditd_action": {
         "config": [
           "not found"
@@ -32807,7 +32745,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T02:14:16Z",
-        "hostname": "ubuntu-22-04-lts-ubuntu-pro-gen1-x64-gen1-latest",
         "kernel": "6.8.0-1044-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 22.04.5 LTS\"",
@@ -33042,7 +32979,7 @@
         ]
       }
     },
-    "ubuntu-22-04-lts-ubuntu-pro-minimal-gen1-x64-gen1-latest": {
+    "Canonical:ubuntu-22_04-lts:ubuntu-pro-minimal-gen1": {
       "auditd_action": {
         "config": [
           "not found"
@@ -33377,7 +33314,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T02:14:16Z",
-        "hostname": "ubuntu-22-04-lts-ubuntu-pro-minimal-gen1-x64-gen1-latest",
         "kernel": "6.8.0-1044-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 22.04.5 LTS\"",
@@ -33606,7 +33542,7 @@
         ]
       }
     },
-    "ubuntu-22-04-lts-ubuntu-pro-minimal-x64-gen2-latest": {
+    "Canonical:ubuntu-22_04-lts:ubuntu-pro-minimal": {
       "auditd_action": {
         "config": [
           "not found"
@@ -33942,7 +33878,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T02:14:16Z",
-        "hostname": "ubuntu-22-04-lts-ubuntu-pro-minimal-x64-gen2-latest",
         "kernel": "6.8.0-1044-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 22.04.5 LTS\"",
@@ -34171,7 +34106,7 @@
         ]
       }
     },
-    "ubuntu-22-04-lts-ubuntu-pro-x64-gen2-latest": {
+    "Canonical:ubuntu-22_04-lts:ubuntu-pro": {
       "auditd_action": {
         "config": [
           "not found"
@@ -34506,7 +34441,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T02:14:15Z",
-        "hostname": "ubuntu-22-04-lts-ubuntu-pro-x64-gen2-latest",
         "kernel": "6.8.0-1044-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 22.04.5 LTS\"",
@@ -34742,7 +34676,7 @@
         ]
       }
     },
-    "ubuntu-24-04-lts-minimal-gen1-x64-gen1-latest": {
+    "Canonical:ubuntu-24_04-lts:minimal-gen1": {
       "auditd_action": {
         "config": [
           "not found"
@@ -35060,7 +34994,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T02:14:15Z",
-        "hostname": "ubuntu-24-04-lts-minimal-gen1-x64-gen1-latest",
         "kernel": "6.14.0-1017-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 24.04.3 LTS\"",
@@ -35210,7 +35143,7 @@
         ]
       }
     },
-    "ubuntu-24-04-lts-minimal-x64-gen2-latest": {
+    "Canonical:ubuntu-24_04-lts:minimal": {
       "auditd_action": {
         "config": [
           "not found"
@@ -35524,7 +35457,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T02:14:15Z",
-        "hostname": "ubuntu-24-04-lts-minimal-x64-gen2-latest",
         "kernel": "6.14.0-1017-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 24.04.3 LTS\"",
@@ -35673,7 +35605,7 @@
         ]
       }
     },
-    "ubuntu-24-04-lts-server-gen1-x64-gen1": {
+    "Canonical:ubuntu-24_04-lts:server-gen1": {
       "auditd_action": {
         "config": [
           "not found"
@@ -36002,7 +35934,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T02:14:15Z",
-        "hostname": "ubuntu-24-04-lts-server-gen1-x64-gen1",
         "kernel": "6.14.0-1017-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 24.04.3 LTS\"",
@@ -36255,7 +36186,7 @@
         ]
       }
     },
-    "ubuntu-24-04-lts-server-x64-gen2": {
+    "Canonical:ubuntu-24_04-lts:server": {
       "auditd_action": {
         "config": [
           "not found"
@@ -36585,7 +36516,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T02:14:15Z",
-        "hostname": "ubuntu-24-04-lts-server-x64-gen2",
         "kernel": "6.14.0-1017-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 24.04.3 LTS\"",
@@ -36838,7 +36768,7 @@
         ]
       }
     },
-    "ubuntu-24-04-lts-ubuntu-pro-gen1-x64-gen1-latest": {
+    "Canonical:ubuntu-24_04-lts:ubuntu-pro-gen1": {
       "auditd_action": {
         "config": [
           "not found"
@@ -37166,7 +37096,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T02:14:15Z",
-        "hostname": "ubuntu-24-04-lts-ubuntu-pro-gen1-x64-gen1-latest",
         "kernel": "6.14.0-1017-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 24.04.4 LTS\"",
@@ -37418,7 +37347,7 @@
         ]
       }
     },
-    "ubuntu-24-04-lts-ubuntu-pro-minimal-x64-gen2-latest": {
+    "Canonical:ubuntu-24_04-lts:ubuntu-pro-minimal": {
       "auditd_action": {
         "config": [
           "not found"
@@ -37736,7 +37665,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T02:14:15Z",
-        "hostname": "ubuntu-24-04-lts-ubuntu-pro-minimal-x64-gen2-latest",
         "kernel": "6.14.0-1017-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 24.04.3 LTS\"",
@@ -37885,7 +37813,7 @@
         ]
       }
     },
-    "ubuntu-24-04-lts-ubuntu-pro-x64-gen2-latest": {
+    "Canonical:ubuntu-24_04-lts:ubuntu-pro": {
       "auditd_action": {
         "config": [
           "not found"
@@ -38218,7 +38146,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T02:14:15Z",
-        "hostname": "ubuntu-24-04-lts-ubuntu-pro-x64-gen2-latest",
         "kernel": "6.14.0-1017-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 24.04.4 LTS\"",
@@ -38471,7 +38398,7 @@
         ]
       }
     },
-    "ubuntu-25-10-minimal-gen1-x64-gen1-latest": {
+    "Canonical:ubuntu-25_10:minimal-gen1": {
       "auditd_action": {
         "config": [
           "not found"
@@ -38803,7 +38730,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T17:12:13Z",
-        "hostname": "ubuntu-25-10-minimal-gen1-x64-gen1-latest",
         "kernel": "6.17.0-1006-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 25.10\"",
@@ -38958,7 +38884,7 @@
         ]
       }
     },
-    "ubuntu-25-10-minimal-x64-gen2-latest": {
+    "Canonical:ubuntu-25_10:minimal": {
       "auditd_action": {
         "config": [
           "not found"
@@ -39291,7 +39217,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T17:12:13Z",
-        "hostname": "ubuntu-25-10-minimal-x64-gen2-latest",
         "kernel": "6.17.0-1006-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 25.10\"",
@@ -39446,7 +39371,7 @@
         ]
       }
     },
-    "ubuntu-25-10-server-gen1-x64-gen1-latest": {
+    "Canonical:ubuntu-25_10:server-gen1": {
       "auditd_action": {
         "config": [
           "not found"
@@ -39789,7 +39714,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T17:12:13Z",
-        "hostname": "ubuntu-25-10-server-gen1-x64-gen1-latest",
         "kernel": "6.17.0-1006-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 25.10\"",
@@ -40047,7 +39971,7 @@
         ]
       }
     },
-    "ubuntu-25-10-server-x64-gen2-latest": {
+    "Canonical:ubuntu-25_10:server": {
       "auditd_action": {
         "config": [
           "not found"
@@ -40386,7 +40310,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T17:12:13Z",
-        "hostname": "ubuntu-25-10-server-x64-gen2-latest",
         "kernel": "6.17.0-1006-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 25.10\"",
@@ -40643,7 +40566,7 @@
         ]
       }
     },
-    "0001-com-ubuntu-server-focal-20-04-lts-arm64-arm64-gen2-latest": {
+    "Canonical:0001-com-ubuntu-server-focal:20_04-lts-arm64": {
       "auditd_action": {
         "config": [
           "not found"
@@ -40973,7 +40896,6 @@
       "identity": {
         "arch": "aarch64",
         "collected_at": "2026-03-08T02:22:11Z",
-        "hostname": "0001-com-ubuntu-server-focal-20-04-lts-arm64-arm64-gen2-latest",
         "kernel": "5.15.0-1089-azure",
         "os_release": [
           "NAME=\"Ubuntu\"",
@@ -41221,7 +41143,7 @@
         ]
       }
     },
-    "ubuntu-22-04-lts-ubuntu-pro-arm64-arm64-gen2-latest": {
+    "Canonical:ubuntu-22_04-lts:ubuntu-pro-arm64": {
       "auditd_action": {
         "config": [
           "not found"
@@ -41545,7 +41467,6 @@
       "identity": {
         "arch": "aarch64",
         "collected_at": "2026-03-08T02:22:11Z",
-        "hostname": "ubuntu-22-04-lts-ubuntu-pro-arm64-arm64-gen2-latest",
         "kernel": "6.8.0-1044-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 22.04.5 LTS\"",
@@ -41781,7 +41702,7 @@
         ]
       }
     },
-    "ubuntu-22-04-lts-ubuntu-pro-fips-arm64-arm64-gen2-latest": {
+    "Canonical:ubuntu-22_04-lts:ubuntu-pro-fips-arm64": {
       "auditd_action": {
         "config": [
           "not found"
@@ -42120,7 +42041,6 @@
       "identity": {
         "arch": "aarch64",
         "collected_at": "2026-03-08T02:22:11Z",
-        "hostname": "ubuntu-22-04-lts-ubuntu-pro-fips-arm64-arm64-gen2-latest",
         "kernel": "5.15.0-1102-azure-fips",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 22.04.5 LTS\"",
@@ -42359,7 +42279,7 @@
         ]
       }
     },
-    "ubuntu-22-04-lts-ubuntu-pro-minimal-arm64-arm64-gen2-latest": {
+    "Canonical:ubuntu-22_04-lts:ubuntu-pro-minimal-arm64": {
       "auditd_action": {
         "config": [
           "not found"
@@ -42680,7 +42600,6 @@
       "identity": {
         "arch": "aarch64",
         "collected_at": "2026-03-08T02:22:11Z",
-        "hostname": "ubuntu-22-04-lts-ubuntu-pro-minimal-arm64-arm64-gen2-latest",
         "kernel": "6.8.0-1044-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 22.04.5 LTS\"",
@@ -42826,7 +42745,7 @@
         ]
       }
     },
-    "ubuntu-24-04-lts-minimal-arm64-arm64-gen2-latest": {
+    "Canonical:ubuntu-24_04-lts:minimal-arm64": {
       "auditd_action": {
         "config": [
           "not found"
@@ -43137,7 +43056,6 @@
       "identity": {
         "arch": "aarch64",
         "collected_at": "2026-03-08T02:22:11Z",
-        "hostname": "ubuntu-24-04-lts-minimal-arm64-arm64-gen2-latest",
         "kernel": "6.14.0-1017-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 24.04.3 LTS\"",
@@ -43287,7 +43205,7 @@
         ]
       }
     },
-    "ubuntu-24-04-lts-server-arm64-arm64-gen2": {
+    "Canonical:ubuntu-24_04-lts:server-arm64": {
       "auditd_action": {
         "config": [
           "not found"
@@ -43609,7 +43527,6 @@
       "identity": {
         "arch": "aarch64",
         "collected_at": "2026-03-08T02:22:11Z",
-        "hostname": "ubuntu-24-04-lts-server-arm64-arm64-gen2",
         "kernel": "6.14.0-1017-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 24.04.3 LTS\"",
@@ -43862,7 +43779,7 @@
         ]
       }
     },
-    "ubuntu-24-04-lts-ubuntu-pro-arm64-arm64-gen2-latest": {
+    "Canonical:ubuntu-24_04-lts:ubuntu-pro-arm64": {
       "auditd_action": {
         "config": [
           "not found"
@@ -44184,7 +44101,6 @@
       "identity": {
         "arch": "aarch64",
         "collected_at": "2026-03-08T02:22:11Z",
-        "hostname": "ubuntu-24-04-lts-ubuntu-pro-arm64-arm64-gen2-latest",
         "kernel": "6.14.0-1017-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 24.04.4 LTS\"",
@@ -44437,7 +44353,7 @@
         ]
       }
     },
-    "ubuntu-24-04-lts-ubuntu-pro-minimal-arm64-arm64-gen2-latest": {
+    "Canonical:ubuntu-24_04-lts:ubuntu-pro-minimal-arm64": {
       "auditd_action": {
         "config": [
           "not found"
@@ -44748,7 +44664,6 @@
       "identity": {
         "arch": "aarch64",
         "collected_at": "2026-03-08T02:22:11Z",
-        "hostname": "ubuntu-24-04-lts-ubuntu-pro-minimal-arm64-arm64-gen2-latest",
         "kernel": "6.14.0-1017-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 24.04.3 LTS\"",
@@ -44898,7 +44813,7 @@
         ]
       }
     },
-    "ubuntu-25-10-minimal-arm64-arm64-gen2-latest": {
+    "Canonical:ubuntu-25_10:minimal-arm64": {
       "auditd_action": {
         "config": [
           "not found"
@@ -45223,7 +45138,6 @@
       "identity": {
         "arch": "aarch64",
         "collected_at": "2026-03-08T17:12:13Z",
-        "hostname": "ubuntu-25-10-minimal-arm64-arm64-gen2-latest",
         "kernel": "6.17.0-1006-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 25.10\"",
@@ -45378,7 +45292,7 @@
         ]
       }
     },
-    "ubuntu-25-10-server-arm64-arm64-gen2-latest": {
+    "Canonical:ubuntu-25_10:server-arm64": {
       "auditd_action": {
         "config": [
           "not found"
@@ -45714,7 +45628,6 @@
       "identity": {
         "arch": "aarch64",
         "collected_at": "2026-03-08T17:12:13Z",
-        "hostname": "ubuntu-25-10-server-arm64-arm64-gen2-latest",
         "kernel": "6.17.0-1006-azure",
         "os_release": [
           "PRETTY_NAME=\"Ubuntu 25.10\"",
@@ -45972,7 +45885,7 @@
         ]
       }
     },
-    "azure-linux-3-azure-linux-3-arm64-arm64-gen2-latest": {
+    "MicrosoftCBLMariner:azure-linux-3:azure-linux-3-arm64": {
       "auditd_action": {
         "config": [
           "not found"
@@ -46201,7 +46114,6 @@
       "identity": {
         "arch": "aarch64",
         "collected_at": "2026-03-08T01:04:45Z",
-        "hostname": "azure-linux-3-azure-linux-3-arm64-arm64-gen2-latest",
         "kernel": "6.6.121.1-1.azl3",
         "os_release": [
           "NAME=\"Microsoft Azure Linux\"",
@@ -46357,7 +46269,7 @@
         ]
       }
     },
-    "azure-linux-3-azure-linux-3-arm64-gen2-fips-arm64-gen2-latest": {
+    "MicrosoftCBLMariner:azure-linux-3:azure-linux-3-arm64-gen2-fips": {
       "auditd_action": {
         "config": [
           "not found"
@@ -46586,7 +46498,6 @@
       "identity": {
         "arch": "aarch64",
         "collected_at": "2026-03-08T01:04:46Z",
-        "hostname": "azure-linux-3-azure-linux-3-arm64-gen2-fips-arm64-gen2-latest",
         "kernel": "6.6.121.1-1.azl3",
         "os_release": [
           "NAME=\"Microsoft Azure Linux\"",
@@ -46747,7 +46658,7 @@
         ]
       }
     },
-    "azure-linux-3-azure-linux-3-fips-x64-gen1-latest": {
+    "MicrosoftCBLMariner:azure-linux-3:azure-linux-3-fips": {
       "auditd_action": {
         "config": [
           "not found"
@@ -46976,7 +46887,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T01:04:46Z",
-        "hostname": "azure-linux-3-azure-linux-3-fips-x64-gen1-latest",
         "kernel": "6.6.121.1-1.azl3",
         "os_release": [
           "NAME=\"Microsoft Azure Linux\"",
@@ -47133,7 +47043,7 @@
         ]
       }
     },
-    "azure-linux-3-azure-linux-3-gen2-fips-x64-gen2-latest": {
+    "MicrosoftCBLMariner:azure-linux-3:azure-linux-3-gen2-fips": {
       "auditd_action": {
         "config": [
           "not found"
@@ -47366,7 +47276,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T01:04:45Z",
-        "hostname": "azure-linux-3-azure-linux-3-gen2-fips-x64-gen2-latest",
         "kernel": "6.6.121.1-1.azl3",
         "os_release": [
           "NAME=\"Microsoft Azure Linux\"",
@@ -47527,7 +47436,7 @@
         ]
       }
     },
-    "azure-linux-3-azure-linux-3-gen2-x64-gen2-latest": {
+    "MicrosoftCBLMariner:azure-linux-3:azure-linux-3-gen2": {
       "auditd_action": {
         "config": [
           "not found"
@@ -47755,7 +47664,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T01:04:45Z",
-        "hostname": "azure-linux-3-azure-linux-3-gen2-x64-gen2-latest",
         "kernel": "6.6.121.1-1.azl3",
         "os_release": [
           "NAME=\"Microsoft Azure Linux\"",
@@ -47910,7 +47818,7 @@
         ]
       }
     },
-    "azure-linux-3-azure-linux-3-x64-gen1-latest": {
+    "MicrosoftCBLMariner:azure-linux-3:azure-linux-3": {
       "auditd_action": {
         "config": [
           "not found"
@@ -48139,7 +48047,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T01:04:46Z",
-        "hostname": "azure-linux-3-azure-linux-3-x64-gen1-latest",
         "kernel": "6.6.121.1-1.azl3",
         "os_release": [
           "NAME=\"Microsoft Azure Linux\"",
@@ -48291,7 +48198,7 @@
         ]
       }
     },
-    "rhel-7-6-x64-gen1": {
+    "RedHat:RHEL:7.6": {
       "auditd_action": {
         "config": [
           "#",
@@ -48780,7 +48687,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T18:01:03Z",
-        "hostname": "rhel-7-6-x64-gen1",
         "kernel": "3.10.0-957.72.1.el7.x86_64",
         "os_release": [
           "NAME=\"Red Hat Enterprise Linux Server\"",
@@ -49008,7 +48914,7 @@
         "waagent_sudoers": []
       }
     },
-    "rhel-7-8-x64-gen1": {
+    "RedHat:RHEL:7.8": {
       "auditd_action": {
         "config": [
           "#",
@@ -49482,7 +49388,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T18:01:03Z",
-        "hostname": "rhel-7-8-x64-gen1",
         "kernel": "3.10.0-1127.el7.x86_64",
         "os_release": [
           "NAME=\"Red Hat Enterprise Linux Server\"",
@@ -49706,7 +49611,7 @@
         "waagent_sudoers": []
       }
     },
-    "rhel-arm64-8-10-arm64-arm64-gen2": {
+    "RedHat:rhel-arm64:8_10-arm64": {
       "auditd_action": {
         "config": [
           "#",
@@ -50257,7 +50162,6 @@
       "identity": {
         "arch": "aarch64",
         "collected_at": "2026-03-08T18:01:03Z",
-        "hostname": "rhel-arm64-8-10-arm64-arm64-gen2",
         "kernel": "4.18.0-553.34.1.el8_10.aarch64",
         "os_release": [
           "NAME=\"Red Hat Enterprise Linux\"",
@@ -50443,7 +50347,7 @@
         ]
       }
     },
-    "sles-12-sp5-gen2-x64-gen2-latest": {
+    "SUSE:sles-12-sp5:gen2": {
       "auditd_action": {
         "config": [
           "#",
@@ -50757,7 +50661,6 @@
       "identity": {
         "arch": "x86_64",
         "collected_at": "2026-03-08T18:01:03Z",
-        "hostname": "sles-12-sp5-gen2-x64-gen2-latest",
         "kernel": "4.12.14-16.200-azure",
         "os_release": [
           "NAME=\"SLES\"",

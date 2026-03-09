@@ -11,11 +11,6 @@
 
   tasks:
     # ─── 1. IDENTITY ─────────────────────────────────────────────────────────
-    - name: Get hostname
-      command: hostname
-      register: r_hostname
-      changed_when: false
-
     - name: Get date
       command: date -u +%Y-%m-%dT%H:%M:%SZ
       register: r_date
@@ -700,7 +695,6 @@
       set_fact:
         host_boot_info:
           identity:
-            hostname: "{{ r_hostname.stdout }}"
             collected_at: "{{ r_date.stdout }}"
             arch: "{{ r_arch.stdout }}"
             kernel: "{{ r_kernel.stdout }}"
