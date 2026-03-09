@@ -1,4 +1,4 @@
-﻿# dev/ â€” Development & Testing Tools
+﻿# dev/ Development & Testing Tools
 
 This directory contains tools for validating and testing ALAR action scripts
 outside the full ALAR Rust binary. Use these to develop new features, debug
