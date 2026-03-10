@@ -1,4 +1,4 @@
-# dev/ Development & Testing Tools
+﻿# dev/ Development & Testing Tools
 
 This directory contains tools for validating and testing ALAR action scripts
 outside the full ALAR Rust binary. Use these to develop new features, debug
@@ -204,6 +204,20 @@ as context for any AI agent working on ALAR action scripts.
 
 Tracks all known bugs, enhancements, and technical debt items for the ALAR
 action scripts. Organized by priority and action script.
+
+### test-lab-builder.html
+
+**Single-page ARM template generator** for deploying a multi-image test lab.
+Opens in any browser — no server needed. Select Azure VM images by publisher,
+architecture, generation, and disk controller, then generate an ARM template
+that deploys:
+- One **control VM** (RHEL 9 with Ansible pre-installed) that orchestrates
+  test execution via SSH
+- One **target VM per selected image** across all supported Linux distributions
+
+Includes image catalog with 60+ marketplace images, VM size auto-selection
+with NVMe/SCSI controller compatibility, vCPU quota tracking, Ansible
+inventory and playbook generation, and a built-in results HTML report.
 
 ### vm-data-consolidated.json
 
