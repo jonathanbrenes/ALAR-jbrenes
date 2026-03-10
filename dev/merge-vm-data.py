@@ -2,10 +2,9 @@
 """
 Merge new VM collection results into vm-data-consolidated.json.
 
-Takes one or more results JSON files (already sanitized by collect-vm-info.yml)
-and merges them into the consolidated file. Each VM is keyed by its IMDS
-publisher:offer:sku (e.g., "RedHat:RHEL:7.6"), so the same image collected
-from different inventories always maps to the same entry.
+Takes one or more results JSON files (from collect-vm-info.yml playbook)
+and merges them into the consolidated file. Each VM is keyed by its
+Ansible inventory hostname, preserving the original playbook output format.
 
 Usage:
     python merge-vm-data.py results.json [-o vm-data-consolidated.json]
@@ -34,42 +33,14 @@ def load_json(filepath):
         return json.load(f)
 
 
-def get_sku_key(host_data):
-    """Extract publisher:offer:sku:transport from IMDS and disk data.
-
-    Transport is determined by the root disk device name:
-    - 'nvme' if root_disk starts with 'nvme' (e.g., nvme0n1)
-    - 'scsi' otherwise (e.g., sda, sdb)
-    Note: nvme_present may be 'yes' even when root is on SCSI
-    (Azure NVMe Accelerator for temp disk), so we use root_disk.
-    """
+def get_host_summary(host_data):
+    """Extract a short description of a host for logging."""
     compute = host_data.get("imds", {}).get("compute", {})
     publisher = compute.get("publisher", "")
-    offer = compute.get("offer", "")
     sku = compute.get("sku", "")
-    # Determine transport from root disk name
     root_disk = host_data.get("disk", {}).get("root_disk", "")
     transport = "nvme" if root_disk.startswith("nvme") else "scsi"
-    if publisher and offer and sku:
-        return f"{publisher}:{offer}:{sku}:{transport}"
-    return None
-
-
-def rekey_hosts(hosts_dict):
-    """Re-key a hosts dict from arbitrary hostnames to publisher:offer:sku.
-
-    Returns a new dict keyed by SKU and a list of any entries that could
-    not be re-keyed (missing IMDS data).
-    """
-    rekeyed = {}
-    skipped = []
-    for name, data in hosts_dict.items():
-        key = get_sku_key(data)
-        if key:
-            rekeyed[key] = data
-        else:
-            skipped.append(name)
-    return rekeyed, skipped
+    return f"{publisher}/{sku} ({transport})" if publisher else "(no IMDS)"
 
 
 def main():
@@ -105,15 +76,6 @@ def main():
     if os.path.isfile(args.output):
         print(f"Loading existing: {args.output}")
         consolidated = load_json(args.output)
-        # Re-key existing data if it uses old hostname-based keys
-        old_hosts = consolidated.get("hosts", {})
-        consolidated["hosts"], skipped = rekey_hosts(old_hosts)
-        if skipped:
-            print(f"  Warning: {len(skipped)} entries without IMDS data (kept as-is): {skipped}")
-            for name in skipped:
-                consolidated["hosts"][name] = old_hosts[name]
-        if len(consolidated["hosts"]) != len(old_hosts):
-            print(f"  Re-keyed: {len(old_hosts)} entries -> {len(consolidated['hosts'])} unique SKUs")
     else:
         print(f"Creating new: {args.output}")
         consolidated = {"_meta": {}, "hosts": {}}
@@ -121,30 +83,28 @@ def main():
     added = []
     updated = []
 
-    # Merge each input file
+    # Merge each input file (hostname keys preserved as-is)
     for filepath in args.files:
         print(f"Processing: {filepath}")
         new_data = load_json(filepath)
         new_hosts = new_data.get("hosts", {})
 
         for name, host_data in new_hosts.items():
-            key = get_sku_key(host_data)
-            if not key:
-                print(f"  Warning: skipping {name} — no IMDS publisher:offer:sku")
-                continue
-            if key in consolidated["hosts"]:
-                updated.append(key)
+            if name in consolidated["hosts"]:
+                updated.append(name)
             else:
-                added.append(key)
-            consolidated["hosts"][key] = host_data
+                added.append(name)
+            consolidated["hosts"][name] = host_data
 
         print(f"  {len(new_hosts)} hosts from {filepath}")
 
-    # Update _meta
+    # Update _meta (match Ansible to_nice_json format)
     total = len(consolidated["hosts"])
+    from datetime import datetime, timezone
     consolidated["_meta"] = {
         "description": f"Consolidated VM reference data - {total} Azure images",
-        "total_hosts": total,
+        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "total_hosts": str(total),
     }
 
     # Report
@@ -163,7 +123,7 @@ def main():
 
     # Write output
     with open(args.output, "w", encoding="utf-8") as f:
-        json.dump(consolidated, f, indent=2, default=str)
+        json.dump(consolidated, f, indent=4, default=str)
 
     size_kb = os.path.getsize(args.output) / 1024
     print(f"\nWritten: {args.output} ({size_kb:.0f} KB)")

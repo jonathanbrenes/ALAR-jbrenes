@@ -1,7 +1,7 @@
 # ALAR Action Scripts — Backlog
 
 Tracks known bugs, enhancements, and technical debt across all ALAR action scripts.
-Findings are based on code review and data collected from 97 Azure VM images.
+Findings are based on code review and data collected from 132 Azure VM images.
 
 ---
 
@@ -35,7 +35,7 @@ Findings are based on code review and data collected from 97 Azure VM images.
 ### 25. `fstab-impl.sh` LVM branch fails on RHEL 9/10 (UUID-based fstab)
 - **Type**: Bug
 - **Impact**: On RHEL 9+ and RHEL 10 LVM images, fstab uses UUIDs instead of `/dev/mapper/rootvg-*` device paths. The LVM branch (lines 93-99) greps for `rootvg-rootlv`, `rootvg-homelv`, etc. — these patterns match nothing on RHEL 9/10, producing an **empty fstab** that prevents boot.
-- **Confirmed**: RHEL 8 LVM uses `/dev/mapper/rootvg-*` (works), RHEL 9/10 LVM use `UUID=...` (broken)
+- **Confirmed**: 10 images affected — RHEL 9.7, 10.1 (x86 + arm64), RHEL 9/10 LVM Gen2 (SCSI + NVMe), RHEL SAP HA 9.6 (SCSI + NVMe). RHEL 8 LVM uses `/dev/mapper/rootvg-*` (works).
 - **Fix**: Match by mount point instead of device name: `awk '/[[:space:]]+\/[[:space:]]+/ {print}'` for root, `awk '/[[:space:]]+\/home[[:space:]]+/ {print}'` for /home, etc.
 
 ---
@@ -75,7 +75,7 @@ Findings are based on code review and data collected from 97 Azure VM images.
 
 ### 9. `initrd-impl.sh` adds Hyper-V drivers unnecessarily on Ubuntu, Azure Linux, and arm64
 - **Type**: Bug
-- **Impact**: Hyper-V drivers (`hv_vmbus`, `hv_storvsc`, `hv_netvsc`) are built-in on all 38 Ubuntu images (20.04-25.10, x86 and arm64), all 6 Azure Linux 3 images, and some SUSE x86; `--add-drivers` is unnecessary and may fail silently
+- **Impact**: Hyper-V drivers (`hv_vmbus`, `hv_storvsc`, `hv_netvsc`) are built-in on all 53 Ubuntu images (20.04-25.10, x86 and arm64), all 8 Azure Linux 3 images, and some SUSE x86; `--add-drivers` is unnecessary and may fail silently
 - **Fix**: Skip `--add-drivers` when Hyper-V modules are built-in; check `/lib/modules/$(uname -r)/modules.builtin` for `hv_vmbus` before adding drivers
 
 ### 10. Debian not recognized in `get_efi_vendor_dir()` grep pattern
@@ -105,12 +105,12 @@ Findings are based on code review and data collected from 97 Azure VM images.
 
 ### 13. `fstab-impl.sh` doesn't handle btrfs subvolumes (SLES 16)
 - **Type**: Enhancement
-- **Impact**: SLES 16 uses btrfs with `@/` subvolumes; fstab rebuild may omit them
+- **Impact**: SLES 16 uses btrfs with `@/` subvolumes (10+ subvol entries in fstab); fstab rebuild may omit them. Affects all 4 SLES 16 images (x86_64 gen1/gen2 + arm64, SCSI + NVMe)
 - **Related**: #26 (btrfs subvolume path breaks disk detection)
 
 ### 14. `sudo-impl.sh` duplicate user detection reports `ALL` as a user on SLES 16
 - **Type**: Minor bug
-- **Impact**: False positive — `ALL ALL=(ALL) ALL` line matched as user `ALL`
+- **Impact**: False positive — `ALL ALL=(ALL) ALL` line matched as user `ALL`; affects all 4 SLES 16 images (x86_64 gen1/gen2 + arm64)
 - **Fix**: Filter out `ALL` from the duplicate detection regex
 
 ### 15. Kernel rollback on BLS systems should use `grubby --set-default`
@@ -128,7 +128,7 @@ Findings are based on code review and data collected from 97 Azure VM images.
 
 ---
 
-## Findings from 97-VM Analysis
+## Findings from 132-VM Analysis
 
 ### 17. Ubuntu 25.10 uses sudo-rs via alternatives symlink chain
 - **Type**: Enhancement
@@ -168,14 +168,14 @@ Findings are based on code review and data collected from 97 Azure VM images.
 ### 22. Hyper-V modules built-in on all Ubuntu and Azure Linux 3 (not just arm64)
 - **Type**: Confirmation / expansion of #9
 - **Priority**: Low
-- **Impact**: All 38 Ubuntu images (20.04-25.10, x86_64 and aarch64) and all 6 Azure Linux 3 images have `hv_vmbus`/`hv_storvsc` built into the kernel; some SUSE x86 images also have built-in modules (48/97 total)
+- **Impact**: All 53 Ubuntu images (20.04-25.10, x86_64 and aarch64) and all 8 Azure Linux 3 images have `hv_vmbus`/`hv_storvsc` built into the kernel; some SUSE x86 images also have built-in modules (67/132 total)
 - **Affected**: `initrd-impl.sh`
 - **Fix**: Same as #9 — check `modules.builtin` instead of assuming only arm64 needs the skip
 
 ### 23. Recovery when `/boot/loader/entries/` is deleted on BLS systems
 - **Type**: Enhancement
 - **Priority**: High
-- **Impact**: RHEL 8+/AlmaLinux 8+ use BLS (`GRUB_ENABLE_BLSCFG=true`); if `/boot/loader/entries/` is removed, GRUB finds no boot entries and the VM fails to boot. All 34 BLS-enabled images have `grubby` available.
+- **Impact**: RHEL 8+/AlmaLinux 8+ use BLS (`GRUB_ENABLE_BLSCFG=true`); if `/boot/loader/entries/` is removed, GRUB finds no boot entries and the VM fails to boot. All 44 BLS-enabled images have `grubby` available.
 - **Affected**: `grubfix-impl.sh`, `efifix-impl.sh`, planned bootfix
 - **Recovery approach**:
   1. Detect BLS is enabled (`GRUB_ENABLE_BLSCFG=true` in `/etc/default/grub`) but entries are missing

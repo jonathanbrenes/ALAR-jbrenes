@@ -1,13 +1,20 @@
 # Azure VM Boot Reference Data
 
-Consolidated from 97 unique Azure VM images (by `publisher:offer:sku`).
+Consolidated from 132 Azure VM images (keyed by Ansible inventory hostname).
 Use this as context for any AI agent working on ALAR action scripts.
+
+> **Key design:** `vm-data-consolidated.json` uses the Ansible inventory hostname
+> as the dictionary key (e.g., `rhel-9-lvm-gen2-x64-gen2-nvme`). This preserves
+> the original playbook output format and encodes distro, generation, architecture,
+> and transport in the hostname itself. The IMDS publisher/offer/sku and disk
+> transport (NVMe vs SCSI) are available inside each host entry under
+> `imds.compute` and `disk.root_disk`.
 
 > **Why the numbers differ across files:**
 >
 > | File | Count | What it represents |
 > |---|---|---|
-> | `vm-data-consolidated.json` | **97** | One entry per unique `publisher:offer:sku` — the raw collected data |
+> | `vm-data-consolidated.json` | **132** | One entry per VM (hostname key) — the raw collected data |
 > | `vm-reference-data.md` (this file) | **~20 rows per table** | Summary by distro family — e.g., one row for "RHEL 8+" covers all 8.x SKUs |
 > | `alar-bootfix-unification.instructions.md` | **61** | Test matrix: distro × generation × architecture — one row per test scenario |
 

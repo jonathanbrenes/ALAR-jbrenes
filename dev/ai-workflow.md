@@ -1,7 +1,7 @@
 # ALAR2 — AI Workflow Guide
 
 Use this file as mandatory guidance for any AI session working on ALAR.
-Load `dev/vm-data-consolidated.json` for complete context from 97 Azure VM images.
+Load `dev/vm-data-consolidated.json` for complete context from 132 Azure VM images.
 Known bugs and enhancements are tracked in `dev/backlog.md`.
 
 ### How to load this in a new AI session
@@ -55,7 +55,7 @@ src/action_implementation/   # Shell scripts — the actual recovery logic
   helpers.sh                 # Shared utility functions (backup, checkPerm, etc.)
 dev/                         # Development tools and reference data
   backlog.md                 # ← KNOWN BUGS AND ENHANCEMENTS (23 items)
-  vm-data-consolidated.json  # ← RAW DATA FROM 97 VMs (load for full context)
+  vm-data-consolidated.json  # ← RAW DATA FROM 132 VMs (load for full context)
   vm-reference-data.md       # Extended reference tables
   alar-bootfix-unification.instructions.md  # Bootfix project plan
   collect-vm-info.yml        # Ansible playbook to collect VM data (sanitizes inline)
@@ -92,7 +92,7 @@ Boot mode: use `$efi_part_path` (non-empty = EFI) as primary signal, `/sys/firmw
 
 ---
 
-## Distro Quick Reference (from 97 VMs)
+## Distro Quick Reference (from 132 VMs)
 
 ### GRUB Commands and Paths
 
@@ -184,7 +184,7 @@ Boot mode: use `$efi_part_path` (non-empty = EFI) as primary signal, `/sys/firmw
 - Read `dev/backlog.md` — 23 items: Critical (3), High (7), Medium (7), Low (6)
 - Items 1-3 are most impactful: bootfix unification, missing `GRUB_DISABLE_OS_PROBER`, typos
 - Item #23: BLS entries deleted — recovery when `/boot/loader/entries/` is missing on RHEL 8+
-- Items 17-22 are from the 97-VM analysis: sudo-rs symlink, Azure Linux 3 EFI/NVMe/packages, os-prober patterns, Hyper-V built-in scope
+- Items 17-22 are from the 132-VM analysis: sudo-rs symlink, Azure Linux 3 EFI/NVMe/packages, os-prober patterns, Hyper-V built-in scope
 
 ### Testing changes
 1. Deploy a test VM matching target distro/arch/generation
