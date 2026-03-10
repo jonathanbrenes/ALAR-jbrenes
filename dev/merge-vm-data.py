@@ -35,13 +35,23 @@ def load_json(filepath):
 
 
 def get_sku_key(host_data):
-    """Extract publisher:offer:sku from IMDS compute data."""
+    """Extract publisher:offer:sku:transport from IMDS and disk data.
+
+    Transport is determined by the root disk device name:
+    - 'nvme' if root_disk starts with 'nvme' (e.g., nvme0n1)
+    - 'scsi' otherwise (e.g., sda, sdb)
+    Note: nvme_present may be 'yes' even when root is on SCSI
+    (Azure NVMe Accelerator for temp disk), so we use root_disk.
+    """
     compute = host_data.get("imds", {}).get("compute", {})
     publisher = compute.get("publisher", "")
     offer = compute.get("offer", "")
     sku = compute.get("sku", "")
+    # Determine transport from root disk name
+    root_disk = host_data.get("disk", {}).get("root_disk", "")
+    transport = "nvme" if root_disk.startswith("nvme") else "scsi"
     if publisher and offer and sku:
-        return f"{publisher}:{offer}:{sku}"
+        return f"{publisher}:{offer}:{sku}:{transport}"
     return None
 
 

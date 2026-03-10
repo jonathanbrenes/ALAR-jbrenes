@@ -45,3 +45,11 @@ See `dev/alar-bootfix-unification.instructions.md` for the full 3-phase plan:
 - Phase 1: Create `bootfix-impl.sh` with unified per-distro functions and auto boot-mode detection
 - Phase 2: Add arm64 packages, grub targets, BLS regeneration
 - Phase 3: Write EFI grub.cfg as proper redirect shim per distro (configfile/source)
+
+## Pre-requisite: verify rescue VM generation matching
+
+Before implementing bootfix, confirm that `az vm repair create` correctly matches the VM generation (Gen1/Gen2) and architecture (x86_64/arm64) between the original and rescue VMs. The bootfix script relies on `$efi_part_path` for boot mode detection, which is generation-independent, but mismatched rescue VMs could affect other assumptions.
+
+Possibly addressed by: https://github.com/Azure/azure-cli-extensions/pull/8620/changes
+
+If generation matching is not guaranteed, the bootfix must avoid any fallback to `/sys/firmware/efi` and rely exclusively on `$efi_part_path`.

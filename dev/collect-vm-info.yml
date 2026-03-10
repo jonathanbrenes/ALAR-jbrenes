@@ -68,7 +68,19 @@
       failed_when: false
 
     - name: Get root disk device name
-      shell: lsblk -ndo PKNAME "$(findmnt -n -o SOURCE /)"
+      # Handles: partitions (sda1→sda), NVMe (nvme0n1p3→nvme0n1),
+      # LVM (/dev/mapper/rootvg-rootlv → PV → disk),
+      # btrfs subvols (strips [/@/...] suffix)
+      shell:
+        cmd: |
+          SRC=$(findmnt -n -o SOURCE / | sed 's/\[.*\]//')
+          DISK=$(lsblk -ndo PKNAME "$SRC" 2>/dev/null | head -1)
+          if [ -z "$DISK" ]; then
+            PV=$(pvs --noheadings -o pv_name -S "lv_dm_path=$SRC" 2>/dev/null | tr -d ' ' | head -1)
+            [ -n "$PV" ] && DISK=$(lsblk -ndo PKNAME "$PV" 2>/dev/null | head -1)
+          fi
+          [ -z "$DISK" ] && DISK=$(lsblk -ndo NAME "$SRC" 2>/dev/null | head -1)
+          echo "$DISK"
       register: r_root_disk
       changed_when: false
       failed_when: false
@@ -81,8 +93,24 @@
       when: r_root_disk.stdout | trim | length > 0
 
     - name: Check NVMe presence
-      shell: ls /sys/class/nvme/nvme* 2>/dev/null && echo "yes" || echo "no"
+      shell: lsblk -ndo NAME | grep -q '^nvme' && echo "yes" || echo "no"
       register: r_nvme
+      changed_when: false
+      failed_when: false
+
+    - name: List NVMe devices
+      shell: |
+        if command -v nvme &>/dev/null; then
+          OUTPUT=$(nvme list 2>/dev/null)
+          if [ -n "$OUTPUT" ]; then
+            echo "$OUTPUT"
+          else
+            echo "nvme command present but no devices listed"
+          fi
+        else
+          echo "nvme cli not installed"
+        fi
+      register: r_nvme_list
       changed_when: false
       failed_when: false
 
@@ -710,6 +738,7 @@
             root_disk: "{{ r_root_disk.stdout | default('unknown') | trim }}"
             partition_table: "{{ r_sgdisk.stdout_lines | default([]) }}"
             nvme_present: "{{ r_nvme.stdout | default('unknown') | trim }}"
+            nvme_devices: "{{ r_nvme_list.stdout_lines | default([]) }}"
             scsi_hosts: "{{ r_scsi_hosts.stdout | default('0') | trim }}"
           lvm:
             pvs: "{{ r_pvs.stdout_lines | default([]) }}"
@@ -803,6 +832,13 @@
         path: results
         state: directory
 
+    - name: Find hosts with collected data
+      set_fact:
+        _collected: "{{ _collected | default([]) + [item] }}"
+      loop: "{{ groups['all'] }}"
+      when: hostvars[item].host_boot_info is defined
+      no_log: true
+
     - name: Build combined report from all hosts
       set_fact:
         combined_report:
@@ -810,14 +846,7 @@
             description: "Consolidated VM reference data - {{ groups['all'] | length }} Azure images"
             total_hosts: "{{ groups['all'] | length }}"
             generated_at: "{{ lookup('pipe', 'date -u +%Y-%m-%dT%H:%M:%SZ') }}"
-          hosts: >-
-            {{
-              dict(
-                groups['all'] | zip(
-                  groups['all'] | map('extract', hostvars, 'host_boot_info')
-                )
-              )
-            }}
+          hosts: "{{ dict(_collected | default([]) | zip(_collected | default([]) | map('extract', hostvars, 'host_boot_info'))) }}"
 
     - name: Ensure /var/www/html directory exists
       become: true
@@ -830,3 +859,301 @@
       copy:
         dest: /var/www/html/results.json
         content: "{{ combined_report | to_nice_json }}"
+
+    - name: Generate task validation HTML report
+      become: true
+      copy:
+        dest: /var/www/html/index.html
+        content: |
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>ALAR Task Validation Report</title>
+          <style>
+          :root{--b:#edebe9;--t:#201f1e;--m:#605e5c;--p:#0078d4;--hb:#0078d4;--mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;--sans:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+          *{box-sizing:border-box}
+          body{margin:0;font:14px var(--sans);color:var(--t);background:#fff;-webkit-font-smoothing:antialiased;overflow:hidden;height:100vh}
+          .hd{background:var(--hb);color:#fff;padding:10px 16px;display:flex;align-items:center;gap:12px}
+          .hd h1{margin:0;font-size:16px;font-weight:800}
+          .hd .sp{flex:1}
+          .gb{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.45);border-radius:8px;padding:3px 6px;font-size:10px;font-weight:700;cursor:pointer;text-decoration:none}
+          .gb:hover{background:rgba(255,255,255,.22)}
+          .gb svg{width:14px;height:14px;fill:currentColor}
+          .app{display:flex;height:calc(100vh - 42px)}
+          .sb{width:300px;min-width:240px;border-right:1px solid var(--b);overflow-y:auto;background:#fafafa;flex-shrink:0}
+          .vi{padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--b);font-size:12px;display:flex;flex-direction:column;gap:2px}
+          .vi:hover{background:#e8f0f8}
+          .vi.on{background:var(--p);color:#fff}
+          .vi.on .vm{color:rgba(255,255,255,.75)}
+          .vi.on .pl{opacity:.9}
+          .vn{font-weight:700;font-size:12px}
+          .vm{color:var(--m);font-size:11px}
+          .vp{display:flex;gap:3px;flex-wrap:wrap;margin-top:2px}
+          .mn{flex:1;overflow-y:auto;padding:16px}
+          .pn{display:none}
+          .pn.on{display:block}
+          .pt{font-size:16px;font-weight:800;margin:0 0 4px}
+          .ps{font-size:13px;color:var(--m);margin:0 0 12px}
+          .tc{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+          @media(max-width:1100px){.tc{grid-template-columns:1fr}}
+          .sc{background:#fff;border:1px solid var(--b);border-radius:10px;padding:12px;box-shadow:0 1px 2px rgba(0,0,0,.04);margin-top:12px}
+          .sc:first-child{margin-top:0}
+          .sc h4{font-size:13px;font-weight:900;margin:0 0 6px;color:var(--p);border-bottom:1px solid var(--b);padding-bottom:4px}
+          .kv{display:grid;grid-template-columns:150px 1fr;gap:1px 10px;font-size:12px;margin:4px 0}
+          .kv .k{font-weight:700;color:var(--m)}.kv .v{word-break:break-all}
+          pre.d{background:#f8f8f8;border:1px solid var(--b);border-radius:6px;padding:6px;font:11px/1.35 var(--mono);overflow-x:auto;max-height:220px;white-space:pre-wrap;margin:4px 0}
+          .pl{display:inline-block;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:900;white-space:nowrap}
+          .pe{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb}
+          .pw{background:#fff7e6;color:#856404;border:1px solid #f3d08b}
+          .po{background:#ecfdf3;color:#155724;border:1px solid #b7e3c4}
+          .pi{background:#e8f0f8;color:#004085;border:1px solid #c9d8e6}
+          </style>
+          </head>
+          <body>
+          <div class="hd">
+            <h1>ALAR Task Validation Report</h1>
+            <span class="sp"></span>
+            <a class="gb" href="results.json" download><svg viewBox="0 0 16 16"><path d="M8 12l-4-4h2.5V3h3v5H12L8 12zm-5 1h10v1H3v-1z"/></svg> JSON</a>
+          </div>
+
+          {# ── Macros ── #}
+          {% macro kv(l, v) %}<div class="k">{{ l }}</div><div class="v">{{ v }}</div>{% endmacro %}
+          {% macro pre(lines) %}<pre class="d">{% for l in lines %}{{ l }}
+          {% endfor %}</pre>{% endmacro %}
+
+          {# ── Analyze all hosts ── #}
+          {% set all_rows = [] %}
+          {% for sku, h in combined_report.hosts.items() | sort %}
+            {% set id = h.identity | default({}) %}
+            {% set osr_lines = id.os_release | default([]) %}
+            {% set os_id_line = osr_lines | select('match', '^ID=') | list | first | default('ID=') %}
+            {% set os_id = os_id_line.split('=',1)[1] | default('') | replace('"','') | lower %}
+            {% set os_ver_line = osr_lines | select('match', '^VERSION_ID=') | list | first | default('VERSION_ID=') %}
+            {% set os_ver = os_ver_line.split('=',1)[1] | default('') | replace('"','') %}
+            {% set os_name_line = osr_lines | select('match', '^PRETTY_NAME=') | list | first | default('PRETTY_NAME=') %}
+            {% set os_name = os_name_line.split('=',1)[1] | default('') | replace('"','') %}
+            {% set arch = id.arch | default('') %}
+            {% set imds = h.imds | default({}) %}
+            {% set comp = imds.compute | default({}) %}
+            {% set publisher = comp.publisher | default('') %}
+            {% set offer = comp.offer | default('') %}
+            {% set sku_val = comp.sku | default('') %}
+            {% set boot = h.boot_mode.mode | default('unknown') %}
+            {% set bls_on = h.bls.enabled_in_grub_default | default(false) %}
+            {% set bls_entries = h.bls.entries | default([]) | select('search', '\\.conf') | list | length %}
+            {% set lvm_vgs = h.lvm.vgs | default([]) | select('search', 'rootvg') | list %}
+            {% set has_lvm = lvm_vgs | length > 0 %}
+            {% set fstab_lines = h.fstab | default([]) %}
+            {% set hv_types = h.hyperv.module_types | default([]) | join(' ') %}
+            {% set efi_vendors = h.efi.vendor_dirs | default([]) | join(' ') | lower %}
+            {% set osp = h.grub.os_prober | default([]) | join(' ') %}
+            {% set mounts_str = h.mounts.filesystems | default([]) | join(' ') %}
+            {% set disk_info = h.disk | default({}) %}
+            {% set efi_analysis = h.grub.efi_grubcfg_analysis | default([]) | join(' ') %}
+            {% set sudo_bits = h.sudo_action.sudo_bits | default('') %}
+            {% set cmd_line = h.serial_console.kernel_cmdline | default('') %}
+            {% set pkg_mgr = h.package_manager | default([]) | join(' ') %}
+            {% set auditd_halt = h.auditd_action.halt_rules | default([]) | join(' ') %}
+            {% set sudo_dupes = h.sudo_action.duplicate_users | default([]) %}
+            {% set sudo_targetpw = h.sudo_action.targetpw | default('not found') %}
+            {% set fns = namespace(style='none') %}
+            {% if has_lvm %}{% for line in fstab_lines %}{% if not line.strip().startswith('#') %}{% set parts = line.split() %}{% if parts | length >= 2 and parts[1] == '/' %}{% if 'rootvg' in parts[0] %}{% set fns.style = 'device_mapper' %}{% elif parts[0].startswith('UUID=') %}{% set fns.style = 'uuid' %}{% endif %}{% endif %}{% endif %}{% endfor %}{% endif %}
+            {% set f = [] %}
+            {% if boot == 'efi' %}{% set _ = f.append(('T01','EFI (bootfix scope)','info')) %}{% endif %}
+            {% if 'installed' in osp and 'not installed' not in osp %}{% set _ = f.append(('T02','os-prober installed','warn')) %}{% endif %}
+            {% if boot == 'efi' and os_id in ('ubuntu','debian') %}{% set _ = f.append(('T03','Ubuntu/Debian EFI','info')) %}{% endif %}
+            {% if arch == 'aarch64' %}{% set _ = f.append(('T04','arm64','info')) %}{% endif %}
+            {% if bls_on and bls_entries > 0 %}{% set _ = f.append(('T05','BLS ' ~ bls_entries ~ ' entries','info')) %}{% endif %}
+            {% if 'DIVERGED' in efi_analysis %}{% set _ = f.append(('T06','EFI DIVERGED','err')) %}{% endif %}
+            {% if os_id in ('sles','opensuse','suse') and 'configfile' in efi_analysis and 'source' not in efi_analysis %}{% set _ = f.append(('T07','SUSE configfile','err')) %}{% endif %}
+            {% if os_id in ('azurelinux','mariner') and 'redhat' not in efi_vendors and 'ubuntu' not in efi_vendors %}{% set _ = f.append(('T08','No EFI vendor dir','info')) %}{% endif %}
+            {% if 'nvme' in (disk_info.root_disk | default('') | lower) %}{% set _ = f.append(('T09','NVMe root','info')) %}{% elif disk_info.nvme_present | default('no') == 'yes' %}{% set _ = f.append(('T09','NVMe hw only','ok')) %}{% endif %}
+            {% if bls_on and bls_entries == 0 %}{% set _ = f.append(('T10','BLS NO entries','err')) %}{% endif %}
+            {% if 'builtin' in hv_types %}{% set _ = f.append(('T12','HV built-in','ok')) %}{% elif 'module' in hv_types %}{% set _ = f.append(('T12','HV loadable','info')) %}{% endif %}
+            {% if boot == 'efi' and os_id == 'debian' and 'debian' not in efi_vendors %}{% set _ = f.append(('T13','Debian vendor missing','warn')) %}{% endif %}
+            {% if boot == 'bios' %}{% set _ = f.append(('T14','BIOS','info')) %}{% endif %}
+            {% if arch == 'aarch64' and 'ttyAMA0' not in cmd_line and 'console=' in cmd_line %}{% set _ = f.append(('T15','no ttyAMA0','warn')) %}{% endif %}
+            {% if arch == 'x86_64' and 'ttyS0' in cmd_line %}{% set _ = f.append(('T15','ttyS0 OK','ok')) %}{% endif %}
+            {% if '/alternatives/' in sudo_bits or '/cargo/' in sudo_bits %}{% set _ = f.append(('T16','sudo-rs','info')) %}{% endif %}
+            {% if os_id in ('azurelinux','mariner') and 'tdnf' in pkg_mgr %}{% set _ = f.append(('T17','tdnf','info')) %}{% endif %}
+            {% if 'not installed' in osp %}{% set _ = f.append(('T18','No os-prober','ok')) %}{% endif %}
+            {% if 'btrfs' in mounts_str %}{% set _ = f.append(('T19','btrfs','warn')) %}{% endif %}
+            {% if '4111' in sudo_bits %}{% set _ = f.append(('T20','sudo 4111','info')) %}{% elif '4755' in sudo_bits %}{% set _ = f.append(('T20','sudo 4755','ok')) %}{% endif %}
+            {% if bls_on %}{% set _ = f.append(('T21','BLS rollback','info')) %}{% endif %}
+            {% if 'builtin' in hv_types %}{% set _ = f.append(('T23','skip drivers','ok')) %}{% endif %}
+            {% if has_lvm and fns.style == 'uuid' %}{% set _ = f.append(('T25','LVM+UUID BROKEN','err')) %}{% elif has_lvm and fns.style == 'device_mapper' %}{% set _ = f.append(('T25','LVM mapper OK','ok')) %}{% elif has_lvm %}{% set _ = f.append(('T25','LVM','info')) %}{% endif %}
+            {% if 'HALT' in auditd_halt | upper %}{% set _ = f.append(('T26','auditd HALT','warn')) %}{% endif %}
+            {% if sudo_dupes | length > 0 %}{% set _ = f.append(('T27','sudo dupes','warn')) %}{% endif %}
+            {% if 'targetpw' in sudo_targetpw and 'not found' not in sudo_targetpw %}{% set _ = f.append(('T28','targetpw','warn')) %}{% endif %}
+            {% set _ = all_rows.append({'sku': sku, 'publisher': publisher, 'offer': offer, 'sku_val': sku_val, 'arch': arch, 'boot': boot, 'os_name': os_name, 'os_id': os_id, 'os_ver': os_ver, 'findings': f, 'h': h, 'has_lvm': has_lvm, 'fstab_lvm_style': fns.style, 'bls_entries': bls_entries, 'idx': loop.index0}) %}
+          {% endfor %}
+
+          <div class="app">
+          {# ── Sidebar ── #}
+          <div class="sb" id="sb">
+          {% for r in all_rows %}
+          <div class="vi{% if loop.first %} active{% endif %}" onclick="showVM({{ r.idx }})" id="n{{ r.idx }}">
+            <span class="vn">{{ r.publisher }} / {{ r.sku_val }}</span>
+            <span class="vm">{{ r.os_name }} &mdash; {{ r.arch }} / {{ r.boot }}</span>
+            {% set ew = r.findings | selectattr(2, 'in', ['err','warn']) | list %}
+            {% if ew | length > 0 %}<span class="vp">{% for t, m, s in ew %}<span class="pl p{{ s[0] }}">{{ m }}</span>{% endfor %}</span>{% endif %}
+          </div>
+          {% endfor %}
+          </div>
+
+          {# ── Main panels ── #}
+          <div class="mn" id="mn">
+          {% for r in all_rows %}
+          {% set h = r.h %}
+          <div class="pn{% if loop.first %} active{% endif %}" id="v{{ r.idx }}">
+            <div class="pt">{{ r.publisher }} / {{ r.offer }} / {{ r.sku_val }}</div>
+            <div class="ps">{{ r.os_name }} &mdash; {{ r.arch }} / {{ r.boot }} &mdash; Kernel {{ h.identity.kernel | default('') }}</div>
+
+            <div class="tc">
+              {# ── Col 1: System, Disk, Kernel, Modules, Agent ── #}
+              <div>
+                <div class="sc"><h4>Identity &amp; Image</h4>
+                <div class="kv">
+                {{ kv('Publisher', r.publisher) }}{{ kv('Offer', r.offer) }}{{ kv('SKU', r.sku_val) }}
+                {{ kv('OS', r.os_name) }}{{ kv('OS ID', r.os_id) }}{{ kv('Version', r.os_ver) }}
+                {{ kv('Architecture', r.arch) }}{{ kv('Kernel', h.identity.kernel | default('')) }}
+                {{ kv('VM Size', h.imds.compute.vmSize | default('')) }}{{ kv('Collected', h.identity.collected_at | default('')) }}
+                </div></div>
+
+                <div class="sc" style="margin-top:12px"><h4>Boot Mode</h4>
+                <div class="kv">{{ kv('Mode', r.boot) }}{{ kv('Secure Boot', h.boot_mode.secure_boot | default('unknown')) }}</div></div>
+
+                <div class="sc" style="margin-top:12px"><h4>Disk &amp; Partitions</h4>
+                <div class="kv">{{ kv('Root Disk', h.disk.root_disk | default('')) }}{{ kv('NVMe', h.disk.nvme_present | default('no')) }}{{ kv('SCSI Hosts', h.disk.scsi_hosts | default('')) }}</div>
+                {% if h.disk.nvme_present | default('no') == 'yes' %}<b>NVMe Devices:</b>{{ pre(h.disk.nvme_devices | default([])) }}{% endif %}
+                {{ pre(h.disk.block_devices | default([])) }}
+                {% if h.disk.partition_table | default([]) | length > 0 %}{{ pre(h.disk.partition_table) }}{% endif %}
+                </div>
+
+                {% if h.lvm.vgs | default([]) | length > 0 %}
+                <div class="sc" style="margin-top:12px"><h4>LVM</h4>
+                <b>VGs:</b>{{ pre(h.lvm.vgs) }}<b>LVs:</b>{{ pre(h.lvm.lvs | default([])) }}<b>PVs:</b>{{ pre(h.lvm.pvs | default([])) }}
+                </div>{% endif %}
+
+                <div class="sc" style="margin-top:12px"><h4>Mount Points</h4>
+                {{ pre(h.mounts.filesystems | default([])) }}
+                <div class="kv">{{ kv('EFI', h.mounts.efi | default([]) | join(' ')) }}{{ kv('Boot', h.mounts.boot | default([]) | join(' ')) }}</div>
+                </div>
+
+                <div class="sc" style="margin-top:12px"><h4>Fstab</h4>
+                {% if r.has_lvm %}<div class="kv">{{ kv('LVM Style', r.fstab_lvm_style) }}</div>{% endif %}
+                {{ pre(h.fstab | default([])) }}
+                </div>
+
+                {% if h.fstab_detail.resource_disk | default([]) | length > 0 %}
+                <div class="sc" style="margin-top:12px"><h4>Fstab Detail</h4>
+                <b>Resource disk:</b>{{ pre(h.fstab_detail.resource_disk) }}
+                {% if h.fstab_detail.lv_details | default([]) | length > 0 %}<b>LV details:</b>{{ pre(h.fstab_detail.lv_details) }}{% endif %}
+                </div>{% endif %}
+
+                <div class="sc" style="margin-top:12px"><h4>Kernel &amp; Initramfs</h4>
+                <b>Kernels:</b>{{ pre(h.kernel.kernel_files | default([])) }}
+                <b>Initramfs:</b>{{ pre(h.kernel.initramfs_files | default([])) }}
+                <b>Symlinks:</b>{{ pre(h.kernel.boot_symlinks | default([])) }}
+                <b>Modules:</b>{{ pre(h.kernel.module_dirs | default([])) }}
+                </div>
+
+                <div class="sc" style="margin-top:12px"><h4>Initramfs Tooling</h4>
+                {{ pre(h.initramfs_tooling.dracut | default([])) }}
+                {{ pre(h.initramfs_tooling.initramfs_tools | default([])) }}
+                </div>
+
+                <div class="sc" style="margin-top:12px"><h4>Hyper-V Modules</h4>
+                <b>Type:</b>{{ pre(h.hyperv.module_types | default([])) }}
+                <b>Loaded:</b>{{ pre(h.hyperv.loaded_modules | default([])) }}
+                </div>
+
+                <div class="sc" style="margin-top:12px"><h4>Package Manager</h4>
+                {{ pre(h.package_manager | default([])) }}
+                </div>
+
+                <div class="sc" style="margin-top:12px"><h4>Azure Agent</h4>
+                {{ pre(h.azure_agent.waagent | default([])) }}
+                <div class="kv">{{ kv('cloud-init', h.azure_agent.cloud_init | default('')) }}</div>
+                </div>
+              </div>
+
+              {# ── Col 2: GRUB, EFI, BLS, Serial, Security ── #}
+              <div>
+                <div class="sc"><h4>GRUB Configuration</h4>
+                <div class="kv">{{ kv('GRUB Path', '/boot/grub2/' if 'grub2-install' in (h.grub.binaries | default([]) | join(' ')) else '/boot/grub/') }}</div>
+                <b>/etc/default/grub:</b>{{ pre(h.grub.default_grub | default([])) }}
+                {% if h.grub.grubd_contents | default([]) | length > 1 %}<b>grub.d:</b>{{ pre(h.grub.grubd_contents) }}{% endif %}
+                </div>
+
+                <div class="sc" style="margin-top:12px"><h4>GRUB Packages &amp; Binaries</h4>
+                {% if h.grub.packages_rpm | default([]) | length > 0 %}<b>RPM:</b>{{ pre(h.grub.packages_rpm) }}{% endif %}
+                {% if h.grub.packages_dpkg | default([]) | length > 0 %}<b>DPKG:</b>{{ pre(h.grub.packages_dpkg) }}{% endif %}
+                <b>Binaries:</b>{{ pre(h.grub.binaries | default([])) }}
+                <b>os-prober:</b>{{ pre(h.grub.os_prober | default([])) }}
+                </div>
+
+                <div class="sc" style="margin-top:12px"><h4>grub.cfg Files</h4>
+                {{ pre(h.grub.grub_cfgs | default([])) }}
+                </div>
+
+                <div class="sc" style="margin-top:12px"><h4>EFI grub.cfg Analysis</h4>
+                {{ pre(h.grub.efi_grubcfg_analysis | default([])) }}
+                </div>
+
+                <div class="sc" style="margin-top:12px"><h4>BLS</h4>
+                <div class="kv">{{ kv('Enabled', h.bls.enabled_in_grub_default | default(false)) }}{{ kv('Entries', r.bls_entries) }}</div>
+                {% if h.bls.entries | default([]) | length > 1 %}{{ pre(h.bls.entries) }}{% endif %}
+                </div>
+
+                {% if r.boot == 'efi' %}
+                <div class="sc" style="margin-top:12px"><h4>EFI Directory</h4>
+                <b>Vendor dirs:</b>{{ pre(h.efi.vendor_dirs | default([])) }}
+                <b>Binaries:</b>{{ pre(h.efi.efi_binaries | default([])) }}
+                <b>Tree:</b>{{ pre(h.efi.file_tree | default([])) }}
+                </div>{% endif %}
+
+                <div class="sc" style="margin-top:12px"><h4>Secure Boot &amp; Shim</h4>
+                <div class="kv">{{ kv('State', h.secure_boot.state | default('unknown')) }}</div>
+                {{ pre(h.secure_boot.shim_binaries | default([])) }}
+                </div>
+
+                <div class="sc" style="margin-top:12px"><h4>Serial Console</h4>
+                <div class="kv">{{ kv('Cmdline', h.serial_console.kernel_cmdline | default('')) }}</div>
+                <b>TTY:</b>{{ pre(h.serial_console.tty_devices | default([])) }}
+                <b>Getty:</b>{{ pre(h.serial_console.getty_units | default([])) }}
+                </div>
+
+                <div class="sc" style="margin-top:12px"><h4>Kernel Rollback</h4>
+                <div class="kv">{{ kv('Default', h.kernel_action.default_kernel | default('')) }}{{ kv('GRUB_DEFAULT', h.kernel_action.grub_default | default('')) }}</div>
+                </div>
+
+                <div class="sc" style="margin-top:12px"><h4>Initrd Details</h4>
+                {{ pre(h.initrd_action.dracut_hyperv | default([])) }}
+                </div>
+
+                <div class="sc" style="margin-top:12px"><h4>Sudo &amp; Permissions</h4>
+                <div class="kv">{{ kv('sudo bits', h.sudo_action.sudo_bits | default('')) }}{{ kv('/etc perms', h.sudo_action.etc_perms | default('')) }}{{ kv('targetpw', h.sudo_action.targetpw | default('not found')) }}{{ kv('Duplicates', h.sudo_action.duplicate_users | default([]) | join(', ') or 'none') }}</div>
+                <b>Sudoers:</b>{{ pre(h.sudo_action.sudoers_perms | default([])) }}
+                <b>waagent:</b>{{ pre(h.sudo_action.waagent_sudoers | default([])) }}
+                </div>
+
+                <div class="sc" style="margin-top:12px"><h4>Auditd</h4>
+                <div class="kv">{{ kv('HALT/SUSPEND', h.auditd_action.halt_rules | default([]) | join(' ')) }}</div>
+                <b>Disk usage:</b>{{ pre(h.auditd_action.disk_usage | default([])) }}
+                {% if h.auditd_action.vg_free_space | default([]) | length > 0 %}<b>VG free:</b>{{ pre(h.auditd_action.vg_free_space) }}{% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+          </div>
+          </div>
+
+          <script>
+          function showVM(i){document.querySelectorAll('.vi').forEach(function(e){e.classList.remove('on')});document.querySelectorAll('.pn').forEach(function(e){e.classList.remove('on')});document.getElementById('n'+i).classList.add('on');document.getElementById('v'+i).classList.add('on');document.getElementById('mn').scrollTop=0}
+          </script>
+          </body>
+          </html>

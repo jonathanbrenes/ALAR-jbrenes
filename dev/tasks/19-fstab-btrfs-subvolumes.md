@@ -5,6 +5,8 @@
 - **Script**: `src/action_implementation/fstab-impl.sh`
 - **Repo**: https://github.com/jonathanbrenes/ALAR-jbrenes/tree/main/dev
 
+> **Note**: SLES 16 also causes a separate disk detection issue — `findmnt -o SOURCE /` returns a path with btrfs subvolume brackets (e.g., `/dev/nvme0n1p3[/@/.snapshots/1/snapshot]`) that breaks `lsblk`. Fixed in `collect-vm-info.yml`; see backlog #26.
+
 SLES 16 uses btrfs with `@/` subvolumes. The root fstab entry looks like:
 
 ```

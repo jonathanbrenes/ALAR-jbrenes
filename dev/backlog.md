@@ -93,6 +93,12 @@ Findings are based on code review and data collected from 97 Azure VM images.
 - **Impact**: serialconsole action should not blindly overwrite existing serial settings
 - **Fix**: Preserve existing baud rate if already configured
 
+### 26. SLES 16 btrfs subvolume path breaks disk detection
+- **Type**: Bug
+- **Impact**: On SLES 16, `findmnt -n -o SOURCE /` returns `/dev/nvme0n1p3[/@/.snapshots/1/snapshot]` (btrfs subvolume in brackets). Any command that passes this to `lsblk` fails with "not a block device". Affects the collector playbook and potentially the ALAR Rust binary's partition detection.
+- **Fix**: Strip the `[...]` suffix: `findmnt -n -o SOURCE / | sed 's/\[.*\]//'`
+- **Affected**: `collect-vm-info.yml` (FIXED), ALAR binary `distro.rs` (needs review)
+
 ---
 
 ## Low Priority — Nice to Have
@@ -100,6 +106,7 @@ Findings are based on code review and data collected from 97 Azure VM images.
 ### 13. `fstab-impl.sh` doesn't handle btrfs subvolumes (SLES 16)
 - **Type**: Enhancement
 - **Impact**: SLES 16 uses btrfs with `@/` subvolumes; fstab rebuild may omit them
+- **Related**: #26 (btrfs subvolume path breaks disk detection)
 
 ### 14. `sudo-impl.sh` duplicate user detection reports `ALL` as a user on SLES 16
 - **Type**: Minor bug
