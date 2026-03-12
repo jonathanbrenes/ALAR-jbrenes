@@ -556,6 +556,27 @@
       changed_when: false
       failed_when: false
 
+    - name: Check Hyper-V modules via sysfs /sys/module
+      shell:
+        cmd: |
+          for mod in hv_vmbus hv_storvsc hv_netvsc; do
+            SYSDIR="/sys/module/${mod}"
+            if [ -d "$SYSDIR" ]; then
+              INITSTATE=$(cat "$SYSDIR/initstate" 2>/dev/null || echo "n/a")
+              if [ -f "$SYSDIR/coresize" ]; then
+                CORESIZE=$(cat "$SYSDIR/coresize" 2>/dev/null)
+                echo "$mod: present (initstate=$INITSTATE, coresize=$CORESIZE, type=loadable)"
+              else
+                echo "$mod: present (initstate=$INITSTATE, type=built-in)"
+              fi
+            else
+              echo "$mod: not in /sys/module"
+            fi
+          done
+      register: r_hv_sysmodule
+      changed_when: false
+      failed_when: false
+
     # ─── 21. (resolv.conf collected but sanitized — see set_fact) ────────────
 
     # ═════════════════════════════════════════════════════════════════════════
@@ -787,6 +808,7 @@
           hyperv:
             loaded_modules: "{{ r_hv_loaded.stdout_lines | default([]) }}"
             module_types: "{{ r_hv_modules.stdout_lines | default([]) }}"
+            sysfs_module: "{{ r_hv_sysmodule.stdout_lines | default([]) }}"
           resolv_conf:
             - "(sanitized)"
           fstab_detail:
