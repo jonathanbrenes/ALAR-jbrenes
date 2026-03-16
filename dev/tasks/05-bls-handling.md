@@ -7,9 +7,9 @@
 
 ## Problem
 
-RHEL 8+ and AlmaLinux 8+ use BLS entries in `/boot/loader/entries/`. The current scripts modify `/etc/default/grub` and regenerate `grub.cfg`, but don't update BLS entries. On BLS systems, boot parameters in `grub.cfg` are overridden by each BLS entry's `options` line.
+RHEL 8+, Oracle Linux 8.10+, and AlmaLinux 8+ use BLS entries in `/boot/loader/entries/`. The current scripts modify `/etc/default/grub` and regenerate `grub.cfg`, but don't update BLS entries. On BLS systems, boot parameters in `grub.cfg` are overridden by each BLS entry's `options` line.
 
-All 34 RHEL 8+/AlmaLinux 8+ images in the 97-VM dataset use BLS (`GRUB_ENABLE_BLSCFG=true` in `/etc/default/grub`). All have `grubby` available.
+All 34 RHEL 8+/AlmaLinux 8+ images and 14 Oracle Linux 8.10+ images in the 148-VM dataset use BLS (`GRUB_ENABLE_BLSCFG=true` in `/etc/default/grub`). All have `grubby` available. OL 7.9 and 8.2 do NOT use BLS.
 
 ## Affected lines
 
@@ -61,6 +61,8 @@ fi
 | Distro | BLS | grubby available |
 |:------|:------|:------|
 | RHEL 8-10 (x86_64 + arm64) | Yes | Yes |
+| Oracle Linux 8.10-10 (x86_64 + arm64) | Yes | Yes |
 | AlmaLinux 8-10 (x86_64 + arm64) | Yes | Yes |
+| Oracle Linux 7.9, 8.2 | No | Yes (but no BLS) |
 | RHEL 7 | No | Yes (but no BLS) |
 | All other distros | No | No |

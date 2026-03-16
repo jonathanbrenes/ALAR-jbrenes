@@ -3,13 +3,15 @@
 - **Priority**: 3 (Medium)
 - **Type**: Bug
 - **Script**: `src/action_implementation/initrd-impl.sh`
-- **Repo**: https://github.com/jonathanbrenes/ALAR-jbrenes/tree/main/dev unconditionally adds `hv_vmbus`, `hv_netvsc`, `hv_storvsc` via `--add-drivers` (dracut) or appending to `/etc/initramfs-tools/modules` (Ubuntu). On 48 of 97 VMs these modules are built into the kernel and the flag is unnecessary.
+`initrd-impl.sh` unconditionally adds `hv_vmbus`, `hv_netvsc`, `hv_storvsc` via `--add-drivers` (dracut) or appending to `/etc/initramfs-tools/modules` (Ubuntu). On 48 of 97 VMs (pre-OL data) these modules are built into the kernel and the flag is unnecessary.
 
 Built-in modules confirmed on:
 - All 38 Ubuntu images (20.04-25.10, x86_64 and aarch64)
 - All 6 Azure Linux 3 images (x86_64 and aarch64)
 - All aarch64 images across all distros
 - Some SUSE x86_64 images
+
+Oracle Linux (all 16 images) has Hyper-V modules as **loadable** (not built-in) — same as RHEL. The `--add-drivers` flag is still needed for OL.
 
 ## Affected lines
 
@@ -37,6 +39,15 @@ dracut -f -v --add-drivers "hv_vmbus hv_netvsc hv_storvsc" /boot/initramfs-${ker
 ```
 
 Note: `recover_azurelinux()` already handles this correctly — Azure Linux 3.0 path (line 86) skips `--add-drivers`.
+
+## Detection methods
+
+Two complementary approaches to detect built-in modules:
+
+1. **On-disk**: `/lib/modules/<kver>/modules.builtin` — lists modules compiled into the kernel image. Works even when kernel is not running (e.g., chroot recovery).
+2. **Runtime sysfs**: `/sys/module/<module_name>` — confirms the module is active in the running kernel. Built-in modules lack the `coresize` file; loadable modules have it. The `initstate` attribute shows `live` for loaded modules.
+
+For ALAR recovery (chroot context), prefer the `modules.builtin` check since the target kernel may not be running. The sysfs check is collected by `collect-vm-info.yml` for validation.
 
 ## How to fix
 
@@ -78,3 +89,10 @@ fi
 ## Related tasks
 
 - Task 23 (confirmation that built-in scope extends beyond arm64)
+
+## Data collection
+
+`collect-vm-info.yml` collects Hyper-V module state via three methods:
+- `lsmod` — loaded modules (`hyperv.loaded_modules`)
+- `modules.builtin` / `.ko*` file search — on-disk type (`hyperv.module_types`)
+- `/sys/module/<name>` sysfs — runtime state with `initstate` and `coresize` (`hyperv.sysfs_module`)

@@ -7,7 +7,7 @@
 
 ## Problem
 
-All boot-related scripts assume x86_64. arm64 Azure VMs exist for RHEL 8-10, AlmaLinux 8-10, Debian 12-13, Ubuntu 20.04-25.10, SUSE 15+, and Azure Linux 3. They have different package names, grub targets, serial TTY, and Hyper-V driver requirements.
+All boot-related scripts assume x86_64. arm64 Azure VMs exist for RHEL 8-10, Oracle Linux 8.10-10, AlmaLinux 8-10, Debian 12-13, Ubuntu 20.04-25.10, SUSE 15+, and Azure Linux 3. They have different package names, grub targets, serial TTY, and Hyper-V driver requirements.
 
 ## Key differences (arm64 vs x86_64)
 

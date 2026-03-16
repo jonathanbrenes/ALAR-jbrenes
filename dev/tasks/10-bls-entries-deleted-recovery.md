@@ -5,9 +5,9 @@
 - **Scripts**: `grubfix-impl.sh`, `efifix-impl.sh`, planned bootfix
 - **Repo**: https://github.com/jonathanbrenes/ALAR-jbrenes/tree/main/dev
 
-RHEL 8+ and AlmaLinux 8+ use BLS (`GRUB_ENABLE_BLSCFG=true`). Boot entries are stored as individual `.conf` files in `/boot/loader/entries/`. If this directory or its contents are deleted, GRUB finds no boot entries and the VM fails to boot.
+RHEL 8+, Oracle Linux 8.10+, and AlmaLinux 8+ use BLS (`GRUB_ENABLE_BLSCFG=true`). Boot entries are stored as individual `.conf` files in `/boot/loader/entries/`. If this directory or its contents are deleted, GRUB finds no boot entries and the VM fails to boot.
 
-All 34 BLS-enabled images in the 97-VM dataset have `grubby` available.
+All 34 RHEL/AlmaLinux BLS-enabled images and 14 Oracle Linux BLS images in the 148-VM dataset have `grubby` available.
 
 ## Detection
 
@@ -88,7 +88,9 @@ This recovery logic should be part of the unified bootfix (Task 01):
 | Distro | BLS | kernel-install available | grubby available |
 |:------|:------|:------|:------|
 | RHEL 8-10 | Yes | Yes | Yes |
+| Oracle Linux 8.10-10 | Yes | Yes | Yes |
 | AlmaLinux 8-10 | Yes | Yes | Yes |
+| Oracle Linux 7.9, 8.2 | No | N/A | Yes (grubby available but no BLS) |
 | All others | No | N/A | N/A |
 
 ## Related tasks

@@ -82,3 +82,7 @@ The `[[:space:]]+/home[[:space:]]+` pattern avoids matching `/home` inside longe
 
 - **Without fix**: fstab action on RHEL 9/10 LVM images produces an empty fstab — VM fails to boot
 - **With fix**: mount-point matching works on all RHEL LVM versions (8, 9, 10)
+
+## Oracle Linux confirmation
+
+All Oracle Linux 8.10/9.x/10.x LVM images use UUID-based fstab (same as RHEL 9/10). The same fix applies. OL VMs also have `/var/crash` as an additional LVM mount point (`rootvg-crashlv`). The mount-point matching approach handles this correctly — add an awk rule for `/var/crash` if needed, or rely on the existing catch-all.

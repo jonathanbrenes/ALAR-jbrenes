@@ -77,3 +77,5 @@ GRUB_DISABLE_OS_PROBER=true grub2-mkconfig -o /boot/grub2/grub.cfg
 ```
 
 This is harmless when os-prober is not installed (all Debian, SUSE, Azure Linux, arm64 Ubuntu images).
+
+Oracle Linux 7.9-10 also has os-prober installed on all images — same as RHEL. The `recover_redhat()` path already has the prefix, so OL is covered for grubfix/efifix. The initrd/kernel/serialconsole fixes apply equally.

@@ -1,7 +1,7 @@
 # ALAR2 — AI Workflow Guide
 
 Use this file as mandatory guidance for any AI session working on ALAR.
-Load `dev/vm-data-consolidated.json` for complete context from 132 Azure VM images.
+Load `dev/vm-data-consolidated.json` for complete context from 148 Azure VM images.
 Known bugs and enhancements are tracked in `dev/backlog.md`.
 
 ### How to load this in a new AI session
@@ -92,13 +92,14 @@ Boot mode: use `$efi_part_path` (non-empty = EFI) as primary signal, `/sys/firmw
 
 ---
 
-## Distro Quick Reference (from 132 VMs)
+## Distro Quick Reference (from 148 VMs)
 
 ### GRUB Commands and Paths
 
 | Distro | grub-install | grub-mkconfig | GRUB path | Vendor EFI dir |
 |---|---|---|---|---|
 | RHEL 7-10 | `grub2-install` | `grub2-mkconfig` | `/boot/grub2/` | `redhat` |
+| Oracle Linux 7.9-10 | `grub2-install` | `grub2-mkconfig` | `/boot/grub2/` | `redhat` |
 | AlmaLinux 8-10 | `grub2-install` | `grub2-mkconfig` | `/boot/grub2/` | `almalinux` |
 | Debian 11-13 | `grub-install` | `update-grub` | `/boot/grub/` | `debian` |
 | Ubuntu 20.04-25.10 | `grub-install` | `update-grub` | `/boot/grub/` | `ubuntu` |
@@ -110,6 +111,9 @@ Boot mode: use `$efi_part_path` (non-empty = EFI) as primary signal, `/sys/firmw
 | Distro | Method | Note |
 |---|---|---|
 | RHEL 8+ | `configfile` | Redirect shim to `/boot/grub2/grub.cfg` |
+| Oracle Linux 9-10 x86 | `configfile` | Redirect shim to `/boot/grub2/grub.cfg` (vendor dir `redhat`) |
+| Oracle Linux 8.10/9/10 arm64 | `bls_full_config` | Full BLS config in EFI grub.cfg (no separate redirect) |
+| Oracle Linux 7.9/8.2 | Full standalone | **DIVERGED** — same issue as RHEL 7 |
 | AlmaLinux 8-10 | `configfile` | Same as RHEL 8+ (vendor dir is `almalinux`) |
 | RHEL 7.x | Full standalone | **DIVERGED** — two different full configs |
 | Debian/Ubuntu | `configfile` | Redirect shim to `/boot/grub/grub.cfg` |
@@ -123,6 +127,8 @@ Boot mode: use `$efi_part_path` (non-empty = EFI) as primary signal, `/sys/firmw
 |---|---|---|---|---|
 | RHEL 7 | No | `grub2-efi-x64 shim-x64` | N/A | `ttyS0` |
 | RHEL 8-10 | Yes | `grub2-efi-x64 shim-x64` | `grub2-efi-aa64 shim-aa64` | `ttyS0` / `ttyAMA0` |
+| Oracle Linux 7.9 | No | `grub2-efi-x64 shim-x64` | N/A | `ttyS0` |
+| Oracle Linux 8.10-10 | Yes | `grub2-efi-x64 shim-x64` | `grub2-efi-aa64 shim-aa64` | `ttyS0` / `ttyAMA0` |
 | AlmaLinux 8-10 | Yes | `grub2-efi-x64 shim-x64` | `grub2-efi-aa64 shim-aa64` | `ttyS0` / `ttyAMA0` |
 | Debian | No | `grub-efi-amd64-signed` | `grub-efi-arm64-signed` | `ttyS0` / `ttyAMA0` |
 | Ubuntu | No | `grub-efi-amd64-signed shim-signed` | `grub-efi-arm64-signed shim-signed` | `ttyS0` / `ttyAMA0` |
@@ -135,6 +141,8 @@ Boot mode: use `$efi_part_path` (non-empty = EFI) as primary signal, `/sys/firmw
 |---|---|---|---|---|
 | RHEL 7 | `yum` | xfs | `4111` | Yes — **critical** |
 | RHEL 8+ | `dnf` | xfs | `4111` | Yes — **critical** |
+| Oracle Linux 7.9 | `yum` | xfs | `4111` | Yes — **critical** |
+| Oracle Linux 8.10-10 | `dnf` (`yum` available) | xfs | `4111` | Yes — **critical** |
 | AlmaLinux 8-10 | `dnf` | xfs | `4111` | Yes — **critical** |
 | Debian 11-13 | `apt-get` | ext4 | `4755` | No |
 | Ubuntu 20.04-22.04 | `apt-get` | ext4 | `4755` | x86 server/minimal/Pro: Yes; arm64: No |
@@ -153,13 +161,14 @@ Boot mode: use `$efi_part_path` (non-empty = EFI) as primary signal, `/sys/firmw
 3. **arm64 is always EFI** — no BIOS mode for aarch64 in Azure
 4. **EFI grub.cfg must be a redirect shim** — `configfile` for RHEL/Debian/Ubuntu, `source` for SUSE
 5. **GRUB path**: `/boot/grub2/` for RHEL/SUSE, `/boot/grub/` for Debian/Ubuntu
-6. **BLS handling** only for RHEL 8+ — check `/boot/loader/entries/` for actual entries
+6. **BLS handling** for RHEL 8+, Oracle Linux 8.10+ — check `/boot/loader/entries/` for actual entries
 7. **Serial TTY**: `ttyS0` for x86_64, `ttyAMA0` for aarch64 (all arm64 images confirmed)
 8. **Hyper-V drivers**: Skip `--add-drivers` when modules are built-in (all Ubuntu 20.04-25.10, all Azure Linux 3, all aarch64, some SUSE x86); check `modules.builtin` at runtime
 9. **SLES 16 uses btrfs** with `@/` subvolumes — fstab must preserve them
 10. **sudo bits**: RHEL = `4111`, Debian/Ubuntu/SUSE/AzureLinux = `4755` (Ubuntu 25.10 uses a symlinked sudo)
 11. **Azure Linux 3**: Uses `grub2-*` commands, `/boot/grub2/`, `tdnf`/`dnf`, dracut, no EFI vendor dir, NVMe-native with separate `/boot`
 12. **SLES 16 btrfs**: `findmnt -o SOURCE /` returns path with subvolume brackets (e.g., `/dev/nvme0n1p3[/@/.snapshots/1/snapshot]`) — must strip `[...]` before passing to `lsblk` or other block device tools
+13. **Oracle Linux** behaves like RHEL: `grub2-*` commands, `/boot/grub2/`, `redhat` EFI vendor dir, BLS on 8.10+, `4111` sudo, LVM with `rootvg`, UUID-based fstab, os-prober on all images. ALAR sees it as `DISTROSUBTYPE=OracleLinux` under `isRedHat=true`
 
 ---
 

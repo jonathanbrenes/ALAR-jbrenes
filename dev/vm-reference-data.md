@@ -1,6 +1,6 @@
 # Azure VM Boot Reference Data
 
-Consolidated from 132 Azure VM images (keyed by Ansible inventory hostname).
+Consolidated from 148 Azure VM images (keyed by Ansible inventory hostname).
 Use this as context for any AI agent working on ALAR action scripts.
 
 > **Key design:** `vm-data-consolidated.json` uses the Ansible inventory hostname
@@ -14,7 +14,7 @@ Use this as context for any AI agent working on ALAR action scripts.
 >
 > | File | Count | What it represents |
 > |---|---|---|
-> | `vm-data-consolidated.json` | **132** | One entry per VM (hostname key) — the raw collected data |
+> | `vm-data-consolidated.json` | **148** | One entry per VM (hostname key) — the raw collected data |
 > | `vm-reference-data.md` (this file) | **~20 rows per table** | Summary by distro family — e.g., one row for "RHEL 8+" covers all 8.x SKUs |
 > | `alar-bootfix-unification.instructions.md` | **61** | Test matrix: distro × generation × architecture — one row per test scenario |
 
@@ -27,6 +27,7 @@ Use this as context for any AI agent working on ALAR action scripts.
 | Distro | grub-install | grub-mkconfig | update-grub | grubby |
 |---|---|---|---|---|
 | RHEL 7-10 | `grub2-install` | `grub2-mkconfig` | N/A | `grubby` |
+| Oracle Linux 7.9-10 | `grub2-install` | `grub2-mkconfig` | N/A | `grubby` |
 | AlmaLinux 8-10 | `grub2-install` | `grub2-mkconfig` | N/A | `grubby` |
 | Debian 11-13 | `grub-install` | `grub-mkconfig` | `update-grub` | N/A |
 | Ubuntu 20.04-25.10 | `grub-install` | `grub-mkconfig` | `update-grub` | N/A |
@@ -38,6 +39,7 @@ Use this as context for any AI agent working on ALAR action scripts.
 | Distro | Main grub.cfg | EFI grub.cfg | Vendor dir |
 |---|---|---|---|
 | RHEL | `/boot/grub2/grub.cfg` | `/boot/efi/EFI/redhat/grub.cfg` | `redhat` |
+| Oracle Linux | `/boot/grub2/grub.cfg` | `/boot/efi/EFI/redhat/grub.cfg` | `redhat` |
 | AlmaLinux | `/boot/grub2/grub.cfg` | `/boot/efi/EFI/almalinux/grub.cfg` | `almalinux` |
 | Debian | `/boot/grub/grub.cfg` | `/boot/efi/EFI/debian/grub.cfg` | `debian` |
 | Ubuntu | `/boot/grub/grub.cfg` | `/boot/efi/EFI/ubuntu/grub.cfg` | `ubuntu` |
@@ -49,6 +51,9 @@ Use this as context for any AI agent working on ALAR action scripts.
 | Distro | Method | Command |
 |---|---|---|
 | RHEL 8+ | `configfile` | `search --no-floppy --set prefix --file /grub2/grub.cfg; configfile $prefix/grub.cfg` |
+| Oracle Linux 9-10 x86 | `configfile` | Same as RHEL 8+ (vendor dir `redhat`) |
+| Oracle Linux 8.10/9/10 arm64 | `bls_full_config` | Full BLS config in EFI grub.cfg (no separate redirect) |
+| Oracle Linux 7.9/8.2 | Full standalone | No redirect — DIVERGED (same issue as RHEL 7) |
 | AlmaLinux 8-10 | `configfile` | Same as RHEL 8+ (vendor dir is `almalinux`) |
 | RHEL 7.x | Full standalone | No redirect — full menuentry grub.cfg in EFI (DIVERGED from boot) |
 | Debian/Ubuntu | `configfile` | `search.fs_uuid <UUID> root; set prefix=($root)'/boot/grub'; configfile $prefix/grub.cfg` |
@@ -63,6 +68,11 @@ Use this as context for any AI agent working on ALAR action scripts.
 | RHEL 8.x | Yes | Yes | Yes |
 | RHEL 9.x | Yes | Yes | Yes |
 | RHEL 10.x | Yes | Yes | Yes |
+| Oracle Linux 7.9 | No | No | Yes (v8.28) |
+| Oracle Linux 8.2 | No | No | Yes |
+| Oracle Linux 8.10 | Yes | Yes | Yes |
+| Oracle Linux 9.x | Yes | Yes | Yes |
+| Oracle Linux 10.x | Yes | Yes | Yes |
 | AlmaLinux 8.x | Yes | Yes | Yes |
 | AlmaLinux 9.x | Yes | Yes | Yes |
 | AlmaLinux 10.x | Yes | Yes | Yes |
@@ -76,6 +86,7 @@ Use this as context for any AI agent working on ALAR action scripts.
 | Distro | x86_64 EFI packages | aarch64 EFI packages |
 |---|---|---|
 | RHEL | `grub2-efi-x64`, `shim-x64` | `grub2-efi-aa64`, `shim-aa64` |
+| Oracle Linux | `grub2-efi-x64`, `shim-x64` | `grub2-efi-aa64`, `shim-aa64` |
 | AlmaLinux | `grub2-efi-x64`, `shim-x64` | `grub2-efi-aa64`, `shim-aa64` |
 | Debian | `grub-efi-amd64-bin`, `grub-efi-amd64-signed`, `shim-signed:amd64` | `grub-efi-arm64-bin`, `grub-efi-arm64-signed`, `shim-signed:arm64` |
 | Ubuntu | `grub-efi-amd64-signed`, `shim-signed` | `grub-efi-arm64-signed`, `shim-signed` |
@@ -98,6 +109,8 @@ All arm64 hosts have `ttyS0`, `ttyS1`, AND `ttyAMA0` present as devices, but the
 | x86_64 | `ttyS0` | `serial-getty@ttyS0.service` | `console=ttyS0,115200` |
 | aarch64 | `ttyAMA0` | `serial-getty@ttyAMA0.service` | `console=ttyAMA0 earlycon=pl011,0xeffec000` |
 
+> Oracle Linux arm64 uses `console=ttyAMA0 console=ttyAMA0,115200n8` (duplicated console entry, no earlycon).
+
 ### Boot Partition Layout
 
 | Image type | Separate /boot | Boot on root | LVM |
@@ -105,6 +118,8 @@ All arm64 hosts have `ttyS0`, `ttyS1`, AND `ttyAMA0` present as devices, but the
 | RHEL LVM (8/9/10) | Yes (xfs, ~1G) | No | Yes (rootvg) |
 | RHEL raw (8/9/10) | No | Yes | No |
 | RHEL 7.x | Yes (xfs, 494M) | No | Yes (rootvg) |
+| Oracle Linux 8.10-10 LVM | Yes (xfs, 2G) | No | Yes (rootvg) |
+| Oracle Linux 7.9 | Yes (xfs, 496M) | No | No |
 | AlmaLinux 8-10 | No | Yes | No |
 | Debian 11 Gen1 | Yes (separate partition) | No | No |
 | Debian 12/13 | No | Yes | No |
@@ -118,6 +133,7 @@ All arm64 hosts have `ttyS0`, `ttyS1`, AND `ttyAMA0` present as devices, but the
 | Distro | Root FS | Boot FS |
 |---|---|---|
 | RHEL 7-10 | xfs | xfs |
+| Oracle Linux 7.9-10 | xfs | xfs |
 | AlmaLinux 8-10 | xfs | xfs |
 | Debian 11-13 | ext4 | ext4 (when separate) |
 | Ubuntu 20.04-25.10 | ext4 | ext4 |
@@ -131,6 +147,8 @@ All arm64 hosts have `ttyS0`, `ttyS1`, AND `ttyAMA0` present as devices, but the
 |---|---|---|
 | RHEL LVM | `/dev/mapper/rootvg-rootlv` | `UUID=...` |
 | RHEL raw | `UUID=...` | `UUID=...` |
+| Oracle Linux LVM (8.10+) | `UUID=...` | `UUID=...` |
+| Oracle Linux 7.9 | `UUID=...` | `UUID=...` |
 | AlmaLinux | `UUID=...` | `UUID=...` |
 | Debian | `PARTUUID=...` | `PARTUUID=...` |
 | Ubuntu | `UUID=...` (root), `LABEL=BOOT` (boot) | `UUID=...` |
@@ -142,6 +160,8 @@ All arm64 hosts have `ttyS0`, `ttyS1`, AND `ttyAMA0` present as devices, but the
 |---|---|---|
 | RHEL 7.x | `yum` | — |
 | RHEL 8+ | `dnf` | `yum` (symlink) |
+| Oracle Linux 7.9 | `yum` | — |
+| Oracle Linux 8.10+ | `dnf` | `yum` |
 | AlmaLinux 8-10 | `dnf` | `yum` |
 | Azure Linux 3 | `tdnf` | `dnf` |
 | Debian/Ubuntu | `apt-get` | — |
@@ -171,12 +191,14 @@ All arm64 hosts have `ttyS0`, `ttyS1`, AND `ttyAMA0` present as devices, but the
 | Debian cloud kernels | Loadable modules | `/lib/modules/.../kernel/drivers/hv/` |
 | RHEL 8+ (x86_64) | Loadable | Loaded via lsmod |
 | RHEL (aarch64) | Loadable modules | Standard path |
+| Oracle Linux (all) | Loadable modules | Standard path (same as RHEL) |
 
 ### sudo Permissions
 
 | Distro | Setuid bits | Binary path |
 |---|---|---|
 | RHEL/AlmaLinux | `4111` | `/usr/bin/sudo` (or `/bin/sudo`) |
+| Oracle Linux | `4111` | `/usr/bin/sudo` |
 | Debian | `4755` | `/usr/bin/sudo` |
 | Ubuntu 20.04-24.04 | `4755` | `/usr/bin/sudo` |
 | Ubuntu 25.10 | `4755` | `/usr/lib/cargo/bin/sudo` (sudo-rs via symlink chain) |
@@ -188,6 +210,7 @@ All arm64 hosts have `ttyS0`, `ttyS1`, AND `ttyAMA0` present as devices, but the
 | Distro | Installed | GRUB_DISABLE_OS_PROBER needed |
 |---|---|---|
 | RHEL 7-10 | Yes (`/bin/os-prober`) | **Critical** — rescue VM Ubuntu gets added |
+| Oracle Linux 7.9-10 | Yes (`/bin/os-prober`) | **Critical** — rescue VM Ubuntu gets added |
 | AlmaLinux 8-10 | Yes (`/bin/os-prober`) | **Critical** — rescue VM Ubuntu gets added |
 | Ubuntu 20.04-22.04 (x86) | Yes | **Critical** — all x86 server/minimal/Pro |
 | Ubuntu 20.04-22.04 (arm64) | No | Not needed |
@@ -205,6 +228,11 @@ All arm64 hosts have `ttyS0`, `ttyS1`, AND `ttyAMA0` present as devices, but the
 | RHEL 8.x | 2.02~beta2 |
 | RHEL 9.x | 2.06 |
 | RHEL 10.x | 2.12 |
+| Oracle Linux 7.9 | 2.02~beta2 |
+| Oracle Linux 8.2 | 2.02 |
+| Oracle Linux 8.10 | 2.06 |
+| Oracle Linux 9.x | 2.06 |
+| Oracle Linux 10.x | 2.12 |
 | AlmaLinux 8.x | 2.03 |
 | AlmaLinux 9.x | 2.06 |
 | AlmaLinux 10.x | 2.12 |
@@ -243,6 +271,7 @@ These must be preserved by the serialconsole action.
 11. **AlmaLinux uses `almalinux` as EFI vendor dir** — not `redhat`; `get_efi_vendor_dir()` must detect this
 12. **Azure Linux 3**: No EFI vendor dir, uses `tdnf`/`dnf`, dracut, NVMe-native with separate `/boot`
 13. **Ubuntu 25.10 uses sudo-rs** — binary at `/usr/lib/cargo/bin/sudo` via symlink chain; resolve with `readlink -f`
+14. **Oracle Linux** behaves like RHEL: `grub2-*` commands, `/boot/grub2/`, `redhat` EFI vendor dir, BLS on 8.10+, `4111` sudo, LVM with `rootvg`, UUID fstab, os-prober on all images. `DISTROSUBTYPE=OracleLinux` under `isRedHat=true`
 
 ---
 

@@ -11,7 +11,7 @@
 
 `efifix-impl.sh` `recover_redhat()` (lines 30-31) generates a full `grub.cfg` at the EFI vendor path AND at `/boot/grub2/grub.cfg`. This creates two independent configs that diverge over time. The correct pattern is a small redirect shim at the EFI path that points to the main grub.cfg.
 
-RHEL 7.x already shows this divergence in the 97-VM data — two different full configs at `/boot/efi/EFI/redhat/grub.cfg` and `/boot/grub2/grub.cfg`.
+RHEL 7.x already shows this divergence in the 97-VM data — two different full configs at `/boot/efi/EFI/redhat/grub.cfg` and `/boot/grub2/grub.cfg`. Oracle Linux 7.9 and 8.2 have the same DIVERGED pattern (full standalone EFI grub.cfg). OL 9.x and 10.x x86_64 use correct `configfile` redirect shims.
 
 ## Affected lines
 
@@ -85,3 +85,4 @@ Azure Linux 3 has no EFI vendor dir. Its grub.cfg lives at `/boot/efi/boot/grub2
 1. Generate the main grub.cfg only at the standard path (`/boot/grub2/grub.cfg` or `/boot/grub/grub.cfg`)
 2. Write the EFI grub.cfg as a distro-appropriate redirect shim
 3. Detect the vendor directory dynamically (include `almalinux` and `debian` in the grep pattern)
+4. Oracle Linux uses the `redhat` vendor dir (not `oracle`) — the existing RHEL grep pattern `centos|redhat` already covers OL

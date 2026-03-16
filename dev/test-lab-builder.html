@@ -632,6 +632,59 @@ const imageOptions = [
   { key: 'azure_linux_3_azure_linux_3_arm64_gen2_fips_arm64_gen2_latest', arch: 'Arm64', gen: 'Gen2', nvmeCapable: true, scsiCapable: true,
     label: 'Azure Linux 3 Arm64 (Gen2) (MicrosoftCBLMariner:azure-linux-3:azure-linux-3-arm64-gen2-fips:latest)',
     ref: { publisher:'MicrosoftCBLMariner', offer:'azure-linux-3', sku:'azure-linux-3-arm64-gen2-fips', version:'latest' } },
+
+    // Oracle Linux
+    { key: 'oracle-linux-ol10-lvm-x64-gen1_latest', arch: 'x64', gen: 'Gen1', nvmeCapable: false, scsiCapable: true,
+      label: 'Oracle Linux x86_64 (Gen1) (Oracle:Oracle-Linux:ol10-lvm:latest)',
+      ref: { publisher:'Oracle', offer:'Oracle-Linux', sku:'ol10-lvm', version:'latest' } },
+
+    { key: 'oracle-linux-ol10-lvm-gen2-x64-gen2_latest', arch: 'x64', gen: 'Gen2', nvmeCapable: true, scsiCapable: true,
+      label: 'Oracle Linux x86_64 (Gen2) (Oracle:Oracle-Linux:ol10-lvm-gen2:latest)',
+      ref: { publisher:'Oracle', offer:'Oracle-Linux', sku:'ol10-lvm-gen2', version:'latest' } },
+
+    { key: 'oracle-linux-ol79-gen2-x64-gen2_latest', arch: 'x64', gen: 'Gen2', nvmeCapable: false, scsiCapable: true,
+      label: 'Oracle Linux x86_64 (Gen2) (Oracle:Oracle-Linux:ol79-gen2:latest)',
+      ref: { publisher:'Oracle', offer:'Oracle-Linux', sku:'ol79-gen2', version:'latest' } },
+
+    { key: 'oracle-linux-ol810-lvm-x64-gen1_latest', arch: 'x64', gen: 'Gen1', nvmeCapable: false, scsiCapable: true,
+      label: 'Oracle Linux x86_64 (Gen1) (Oracle:Oracle-Linux:ol810-lvm:latest)',
+      ref: { publisher:'Oracle', offer:'Oracle-Linux', sku:'ol810-lvm', version:'latest' } },
+
+    { key: 'oracle-linux-ol810-lvm-gen2-x64-gen2_latest', arch: 'x64', gen: 'Gen2', nvmeCapable: true, scsiCapable: true,
+      label: 'Oracle Linux x86_64 (Gen2) (Oracle:Oracle-Linux:ol810-lvm-gen2:latest)',
+      ref: { publisher:'Oracle', offer:'Oracle-Linux', sku:'ol810-lvm-gen2', version:'latest' } },
+
+    { key: 'oracle-linux-ol82-gen2-x64-gen2_latest', arch: 'x64', gen: 'Gen2', nvmeCapable: false, scsiCapable: true,
+      label: 'Oracle Linux x86_64 (Gen2) (Oracle:Oracle-Linux:ol82-gen2:latest)',
+      ref: { publisher:'Oracle', offer:'Oracle-Linux', sku:'ol82-gen2', version:'latest' } },
+
+    { key: 'oracle-linux-ol95-lvm-x64-gen1_latest', arch: 'x64', gen: 'Gen1', nvmeCapable: false, scsiCapable: true,
+      label: 'Oracle Linux x86_64 (Gen1) (Oracle:Oracle-Linux:ol95-lvm:latest)',
+      ref: { publisher:'Oracle', offer:'Oracle-Linux', sku:'ol95-lvm', version:'latest' } },
+
+    { key: 'oracle-linux-ol95-lvm-gen2-x64-gen2_latest', arch: 'x64', gen: 'Gen2', nvmeCapable: true, scsiCapable: true,
+      label: 'Oracle Linux x86_64 (Gen2) (Oracle:Oracle-Linux:ol95-lvm-gen2:latest)',
+      ref: { publisher:'Oracle', offer:'Oracle-Linux', sku:'ol95-lvm-gen2', version:'latest' } },
+
+    { key: 'oracle-linux-ol96-lvm-x64-gen1_latest', arch: 'x64', gen: 'Gen1', nvmeCapable: false, scsiCapable: true,
+      label: 'Oracle Linux x86_64 (Gen1) (Oracle:Oracle-Linux:ol96-lvm:latest)',
+      ref: { publisher:'Oracle', offer:'Oracle-Linux', sku:'ol96-lvm', version:'latest' } },
+
+    { key: 'oracle-linux-ol10-arm64-lvm-gen2-arm64-gen2_latest', arch: 'Arm64', gen: 'Gen2', nvmeCapable: true, scsiCapable: true,
+      label: 'Oracle Linux Arm64 (Gen2) (Oracle:Oracle-Linux:ol10-arm64-lvm-gen2:latest)',
+      ref: { publisher:'Oracle', offer:'Oracle-Linux', sku:'ol10-arm64-lvm-gen2', version:'latest' } },
+
+    { key: 'oracle-linux-ol810-arm64-lvm-gen2-arm64-gen2_latest', arch: 'Arm64', gen: 'Gen2', nvmeCapable: true, scsiCapable: true,
+      label: 'Oracle Linux Arm64 (Gen2) (Oracle:Oracle-Linux:ol810-arm64-lvm-gen2:latest)',
+      ref: { publisher:'Oracle', offer:'Oracle-Linux', sku:'ol810-arm64-lvm-gen2', version:'latest' } },
+
+    { key: 'oracle-linux-ol95-arm64-lvm-gen2-arm64-gen2_latest', arch: 'Arm64', gen: 'Gen2', nvmeCapable: false, scsiCapable: true,
+      label: 'Oracle Linux Arm64 (Gen2) (Oracle:Oracle-Linux:ol95-arm64-lvm-gen2:latest)',
+      ref: { publisher:'Oracle', offer:'Oracle-Linux', sku:'ol95-arm64-lvm-gen2', version:'latest' } },
+
+    { key: 'oracle-linux-ol96-arm64-lvm-gen2-arm64-gen2_latest', arch: 'Arm64', gen: 'Gen2', nvmeCapable: true, scsiCapable: true,
+      label: 'Oracle Linux Arm64 (Gen2) (Oracle:Oracle-Linux:ol96-arm64-lvm-gen2:latest)',
+      ref: { publisher:'Oracle', offer:'Oracle-Linux', sku:'ol96-arm64-lvm-gen2', version:'latest' } }    
 ];
 
 // ---------------------------------------------------------------------------
@@ -2026,6 +2079,27 @@ const DEFAULT_TEST_YAML = String.raw`---
       changed_when: false
       failed_when: false
 
+    - name: Check Hyper-V modules via sysfs /sys/module
+      shell:
+        cmd: |
+          for mod in hv_vmbus hv_storvsc hv_netvsc; do
+            SYSDIR="/sys/module/${'${'}mod}"
+            if [ -d "$SYSDIR" ]; then
+              INITSTATE=$(cat "$SYSDIR/initstate" 2>/dev/null || echo "n/a")
+              if [ -f "$SYSDIR/coresize" ]; then
+                CORESIZE=$(cat "$SYSDIR/coresize" 2>/dev/null)
+                echo "$mod: present (initstate=$INITSTATE, coresize=$CORESIZE, type=loadable)"
+              else
+                echo "$mod: present (initstate=$INITSTATE, type=built-in)"
+              fi
+            else
+              echo "$mod: not in /sys/module"
+            fi
+          done
+      register: r_hv_sysmodule
+      changed_when: false
+      failed_when: false
+
     # ─── 21. (resolv.conf collected but sanitized — see set_fact) ────────────
 
     # ═════════════════════════════════════════════════════════════════════════
@@ -2257,6 +2331,7 @@ const DEFAULT_TEST_YAML = String.raw`---
           hyperv:
             loaded_modules: "{{ r_hv_loaded.stdout_lines | default([]) }}"
             module_types: "{{ r_hv_modules.stdout_lines | default([]) }}"
+            sysfs_module: "{{ r_hv_sysmodule.stdout_lines | default([]) }}"
           resolv_conf:
             - "(sanitized)"
           fstab_detail:

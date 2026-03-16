@@ -1,7 +1,7 @@
 # ALAR Action Scripts — Backlog
 
 Tracks known bugs, enhancements, and technical debt across all ALAR action scripts.
-Findings are based on code review and data collected from 132 Azure VM images.
+Findings are based on code review and data collected from 148 Azure VM images.
 
 ---
 
@@ -77,6 +77,7 @@ Findings are based on code review and data collected from 132 Azure VM images.
 - **Type**: Bug
 - **Impact**: Hyper-V drivers (`hv_vmbus`, `hv_storvsc`, `hv_netvsc`) are built-in on all 53 Ubuntu images (20.04-25.10, x86 and arm64), all 8 Azure Linux 3 images, and some SUSE x86; `--add-drivers` is unnecessary and may fail silently
 - **Fix**: Skip `--add-drivers` when Hyper-V modules are built-in; check `/lib/modules/$(uname -r)/modules.builtin` for `hv_vmbus` before adding drivers
+- **Detection**: Collector now also gathers `/sys/module/<name>` sysfs data (runtime state, `initstate`, `coresize`) to cross-validate built-in status
 
 ### 10. Debian not recognized in `get_efi_vendor_dir()` grep pattern
 - **Type**: Bug (in planned helpers.sh)
@@ -128,7 +129,7 @@ Findings are based on code review and data collected from 132 Azure VM images.
 
 ---
 
-## Findings from 132-VM Analysis
+## Findings from 148-VM Analysis
 
 ### 17. Ubuntu 25.10 uses sudo-rs via alternatives symlink chain
 - **Type**: Enhancement
@@ -168,14 +169,15 @@ Findings are based on code review and data collected from 132 Azure VM images.
 ### 22. Hyper-V modules built-in on all Ubuntu and Azure Linux 3 (not just arm64)
 - **Type**: Confirmation / expansion of #9
 - **Priority**: Low
-- **Impact**: All 53 Ubuntu images (20.04-25.10, x86_64 and aarch64) and all 8 Azure Linux 3 images have `hv_vmbus`/`hv_storvsc` built into the kernel; some SUSE x86 images also have built-in modules (67/132 total)
+- **Impact**: All 53 Ubuntu images (20.04-25.10, x86_64 and aarch64) and all 8 Azure Linux 3 images have `hv_vmbus`/`hv_storvsc` built into the kernel; some SUSE x86 images also have built-in modules (67/148 total)
 - **Affected**: `initrd-impl.sh`
 - **Fix**: Same as #9 — check `modules.builtin` instead of assuming only arm64 needs the skip
+- **Validation**: `collect-vm-info.yml` now collects three detection methods: `modules.builtin` (on-disk), `lsmod` (loaded), and `/sys/module/<name>` sysfs (runtime state with `initstate`/`coresize`); all stored in `hyperv.*` JSON keys
 
 ### 23. Recovery when `/boot/loader/entries/` is deleted on BLS systems
 - **Type**: Enhancement
 - **Priority**: High
-- **Impact**: RHEL 8+/AlmaLinux 8+ use BLS (`GRUB_ENABLE_BLSCFG=true`); if `/boot/loader/entries/` is removed, GRUB finds no boot entries and the VM fails to boot. All 44 BLS-enabled images have `grubby` available.
+- **Impact**: RHEL 8+/AlmaLinux 8+/Oracle Linux 8.10+ use BLS (`GRUB_ENABLE_BLSCFG=true`); if `/boot/loader/entries/` is removed, GRUB finds no boot entries and the VM fails to boot. All 44 BLS-enabled images (plus 14 Oracle Linux BLS images) have `grubby` available.
 - **Affected**: `grubfix-impl.sh`, `efifix-impl.sh`, planned bootfix
 - **Recovery approach**:
   1. Detect BLS is enabled (`GRUB_ENABLE_BLSCFG=true` in `/etc/default/grub`) but entries are missing
@@ -183,3 +185,29 @@ Findings are based on code review and data collected from 132 Azure VM images.
   3. For each installed kernel in `/lib/modules/*/`, run `kernel-install add <version> /boot/vmlinuz-<version>` to regenerate BLS entries
   4. Alternatively, use `grubby --info=ALL` to verify and `grubby --set-default` to set the default kernel
   5. Regenerate `grub.cfg` with `GRUB_DISABLE_OS_PROBER=true grub2-mkconfig -o /boot/grub2/grub.cfg`
+
+### 27. Oracle Linux — EFI grub.cfg DIVERGED on OL 7.9 and 8.2
+- **Type**: Bug
+- **Priority**: Medium
+- **Impact**: Oracle Linux 7.9 Gen2 and 8.2 Gen2 have `full_standalone` / DIVERGED EFI grub.cfg — same two-diverging-config problem as RHEL 7.x (backlog #6). OL 9.x and 10.x x86_64 use correct `configfile` redirect shims.
+- **Affected**: `efifix-impl.sh`, planned bootfix
+- **Fix**: Same as #6 — write EFI grub.cfg as redirect shim during repair
+
+### 28. Oracle Linux — arm64 EFI grub.cfg uses `bls_full_config`
+- **Type**: Design consideration
+- **Priority**: Medium
+- **Impact**: Oracle Linux 8.10, 9.x, 10.x arm64 images have `bls_full_config` EFI grub.cfg (216 lines, BLS + menuentries, no separate redirect). Same hybrid pattern as RHEL 8/AlmaLinux arm64 (backlog #16). All arm64 images are EFI-only.
+- **Affected**: EFI grub.cfg repair for arm64 OL images
+- **Fix**: Recognize `bls_full_config` pattern; do not overwrite with simple redirect shim on arm64 BLS images
+
+### 29. Oracle Linux — NVMe drivers missing in dracut on OL 7.9 and 8.2
+- **Type**: Bug
+- **Priority**: Medium
+- **Impact**: OL 7.9 and 8.2 do not have `azure.conf` dracut config with NVMe drivers. OL 8.10+ has `add_drivers+=" nvme pci-hyperv "` in `/etc/dracut.conf.d/azure.conf`. Affects NVMe conversion scenarios.
+- **Confirmed**: OL 7.9 and OL 8.2 lack NVMe in dracut; all OL 8.10/9.x/10.x have it
+
+### 30. Oracle Linux — os-prober installed on ALL images
+- **Type**: Confirmation
+- **Priority**: Low
+- **Impact**: All 16 Oracle Linux images have os-prober installed. `GRUB_DISABLE_OS_PROBER=true` is mandatory for all OL grub regeneration calls, same as RHEL.
+- **Affected**: All boot scripts when handling OL (`isRedHat=true`, `DISTROSUBTYPE=OracleLinux`)
