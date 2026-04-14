@@ -176,13 +176,13 @@ python dev/merge-vm-data.py results.json --dry-run
 
 ## Reference Documents
 
-### AI_WORKFLOW.md
+### .github/copilot-instructions.md
 
 **Start here.** Complete AI workflow guide for any agent working on ALAR.
+Auto-loaded by Copilot Chat — no starter prompt needed.
 Covers how ALAR works, repository structure, environment variables, supported
 distros, critical design rules, rescue VM context, reference data locations,
-prompts for common tasks, and how to test changes. This is the single entry
-point document for a new AI session.
+prompts for common tasks, and how to test changes.
 
 ### alar-bootfix-unification.instructions.md
 

@@ -1,15 +1,5 @@
 # ALAR2 — AI Workflow Guide
 
-## Starter Prompt (Quick Copy/Paste)
-
-Use this as the first message in Copilot Chat (or any AI agent):
-
-```text
-Use `dev/AI_WORKFLOW.md` as mandatory guidance for this session.
-Also load `dev/vm-data-consolidated.json` for full VM reference data.
-Check `dev/backlog.md` before making any changes.
-```
-
 ROLE:
 
 - You are a senior systems engineer working on ALAR (Azure Linux Auto Recover).
@@ -28,14 +18,25 @@ RULES:
 8. Always prefix `grub2-mkconfig` and `update-grub` with `GRUB_DISABLE_OS_PROBER=true`.
 9. Use `$efi_part_path` (non-empty = EFI) for boot mode detection — `/sys/firmware/efi` reflects the rescue VM, not the broken disk.
 10. When listing VM images in tables or reports, sort by Publisher first, then by Offer/SKU.
+11. Never commit or push directly to `main`. All work must happen on a dev branch. If the current branch is `main`, ask the user for a custom branch name or use the default `dev_<user>`.
+12. Be concise. No preambles, no restating the request, no "Here's what I did" summaries unless asked.
+13. Suppress verbose tool output. Use flags that minimize output (e.g., `--quiet`, `-q`). Do not echo full file contents after editing.
+14. Do not repeat code that was not changed. When explaining edits, mention only the lines that changed.
+15. Skip obvious confirmations. Do not say "I'll now edit the file" — just edit it.
+16. Show only changed lines in explanations — not the full file or large surrounding blocks.
+17. For terminal commands, pipe through `tail`, `head`, or `grep` when only specific output matters. Avoid dumping full logs.
+18. Do not re-read files already visible in the conversation context.
+19. Combine independent edits into a single multi-edit operation instead of sequential single edits.
+20. When answering questions, lead with the answer. Skip background explanation unless asked.
 
 REFERENCES:
 
-- `dev/AI_WORKFLOW.md` — project conventions, distro reference, design system
+- `.github/copilot-instructions.md` — this file (auto-loaded by Copilot Chat)
 - `dev/backlog.md` — known bugs and enhancements (23+ items)
 - `dev/vm-data-consolidated.json` — raw data from 148 Azure VM images
 - `dev/alar-bootfix-unification.instructions.md` — bootfix project plan
 - `README.md` — user-facing documentation
+- Template source: [copilot-instructions-template](https://github.com/jbrenes_microsoft/copilot-instructions-template) — upstream template repository
 
 When finished, provide: what changed, validation steps, and any risks.
 
@@ -49,6 +50,8 @@ When finished, provide: what changed, validation steps, and any risks.
 - Use the distro tables in this file for correct commands, paths, and packages.
 - Test with `dev/test-action.sh --dry-run` on a matching VM before live runs.
 - Review diffs before committing.
+- Prefer one multi-file edit over multiple single-file edits.
+- Use `--quiet` or `-q` flags on git and package manager commands.
 
 **Don't**
 
@@ -58,6 +61,24 @@ When finished, provide: what changed, validation steps, and any risks.
 - Don't add features, comments, or type annotations beyond what was requested.
 - Don't use `/sys/firmware/efi` for boot mode detection (it reflects the rescue VM).
 - Don't omit `GRUB_DISABLE_OS_PROBER=true` from any `grub2-mkconfig` or `update-grub` call.
+- Don't restate the user's request before acting.
+- Don't display full file contents after small edits.
+- Don't add filler phrases like "Sure!", "Absolutely!", "Great question!".
+- Don't echo back unchanged code blocks after edits.
+- Don't explain what standard commands do (e.g., `git add`, `cd`).
+- Don't narrate each step before doing it — just do it and confirm.
+- Don't list unchanged files in summaries.
+
+---
+
+## Output Rules
+
+- Responses must be concise. Target 1-3 sentences for simple tasks.
+- After file edits, confirm with one line (e.g., "Updated `file.js` — added validation.").
+- For multi-step work, use a brief numbered checklist, not prose paragraphs.
+- Terminal output: only show the relevant lines. Truncate or filter verbose output.
+- Never repeat the user's request back to them.
+- Never start responses with filler ("Sure!", "Absolutely!", "Great question!").
 
 ---
 
@@ -107,6 +128,20 @@ dev/                         # Development tools and reference data
   merge-vm-data.py           # Merge new results into vm-data-consolidated.json
   test-action.sh             # Test harness for running action scripts
 ```
+
+---
+
+## Session Persistence (`localStorage`)
+
+The ARM Template Builder (`dev/test-lab-builder.html`) uses `localStorage` to survive refreshes and tab closes.
+
+| Event | Action |
+|---|---|
+| User interaction (answer, navigate) | Save session to `localStorage` |
+| Page load (valid session exists) | Restore and resume |
+| Session complete or reset | Clear `localStorage` |
+
+Store under a unique key (e.g., `appname_session`) as JSON. Include all state needed to resume: current position, user inputs, and any timers.
 
 ---
 
@@ -220,27 +255,32 @@ Boot mode: use `$efi_part_path` (non-empty = EFI) as primary signal, `/sys/firmw
 ## Working on ALAR — Guidance by Task
 
 ### Modifying any action script
+
 1. Read the script from `src/action_implementation/<name>-impl.sh`
 2. Check `dev/backlog.md` for known bugs related to that script
 3. Use the distro tables above for correct commands/paths
 4. Test with `dev/test-action.sh --dry-run` on a matching VM
 
 ### Working on boot actions (grubfix, efifix, serialconsole, initrd, kernel)
+
 - Read `dev/alar-bootfix-unification.instructions.md` for the bootfix project plan
 - The plan covers unifying grubfix + efifix, adding arm64, BLS, and os-prober fixes
 
 ### Adding support for a new distro or image
+
 1. Run `dev/collect-vm-info.yml` against the new VM (output is pre-sanitized)
 2. Merge with `python dev/merge-vm-data.py results.json -o dev/vm-data-consolidated.json`
 3. Update tables above and `dev/backlog.md` if new issues found
 
 ### Checking known bugs
+
 - Read `dev/backlog.md` — 23 items: Critical (3), High (7), Medium (7), Low (6)
 - Items 1-3 are most impactful: bootfix unification, missing `GRUB_DISABLE_OS_PROBER`, typos
 - Item #23: BLS entries deleted — recovery when `/boot/loader/entries/` is missing on RHEL 8+
 - Items 17-22 are from the 132-VM analysis: sudo-rs symlink, Azure Linux 3 EFI/NVMe/packages, os-prober patterns, Hyper-V built-in scope
 
 ### Testing changes
+
 1. Deploy a test VM matching target distro/arch/generation
 2. `sudo ./dev/test-action.sh <action> --script-dir /path/to/scripts --dry-run`
 3. Verify environment, then run without `--dry-run`
@@ -251,6 +291,13 @@ Boot mode: use `$efi_part_path` (non-empty = EFI) as primary signal, `/sys/firmw
 ## Git Workflow Rules
 
 These rules apply to all git operations in this repository.
+
+### Branch Strategy
+
+- **Never push directly to `main`.** The `main` branch is protected and represents production-ready code.
+- All changes must be made on a dev branch.
+- If the current branch is `main`, ask the user for a custom branch name. If no preference is given, create `dev_<user>` (e.g., `dev_jbrenes`).
+- Merge to `main` only through pull requests after review.
 
 ### Commit Process
 
@@ -417,6 +464,13 @@ Follow these conventions in all `.md` files in this project.
 - No trailing whitespace on any line.
 - Semantic line breaks (content-driven wrapping); no hard line-length limit.
 
+### Changelog Format
+
+- Version header: `## [X.Y.Z] - YYYY-MM-DD` (ISO 8601 dates).
+- Section headers under each version: `### Added`, `### Changed`, `### Fixed`, `### Removed`.
+- One entry per calendar day; append to today's entry if one already exists.
+- Each bullet is a feature/fix description in prose with backticks for code references.
+
 ### Files
 
 - All files must be UTF-8 without BOM.
@@ -425,21 +479,9 @@ Follow these conventions in all `.md` files in this project.
 
 ---
 
-## Conventions
-
-- **No hardcoded credentials** — use interactive prompts or SSH keys.
-- **No example passwords** in docs — use `<your-secure-password>` placeholder.
-- **GRUB regeneration** — always prefix with `GRUB_DISABLE_OS_PROBER=true`.
-- **Boot mode detection** — use `$efi_part_path` (non-empty = EFI), never `/sys/firmware/efi`.
-- **arm64 is always EFI** — no BIOS mode for aarch64 in Azure.
-- **EFI grub.cfg** must be a redirect shim — `configfile` for RHEL/Debian/Ubuntu, `source` for SUSE.
-- **Hyper-V drivers** — skip `--add-drivers` when modules are built-in; check `modules.builtin` at runtime.
-- **Serial TTY** — `ttyS0` for x86_64, `ttyAMA0` for aarch64.
-
-
 ## Visual Design System (Frontend Reference)
 
-This section documents every visual token, font, color, spacing value, and component pattern used in the ARM Template Builder UI. Use this as the authoritative reference when creating pages that must match the existing look and feel.
+This section documents every visual token, font, color, spacing value, and component pattern used in the ARM Template Builder UI (`dev/test-lab-builder.html`). Use this as the authoritative reference when creating pages that must match the existing look and feel.
 
 ### CSS Custom Properties (`:root`)
 
@@ -498,232 +540,113 @@ Text rendering: `-webkit-font-smoothing: antialiased`.
 | `#111827` | Toast background |
 | `#fff7e6` | Warning pill / deploy flow background |
 | `#f3d08b` | Warning pill / deploy flow border |
-| `#ecfdf3` | OK pill background |
-| `#b7e3c4` | OK pill border |
-| `#e8f0f8` | Chip button background |
-| `#c9d8e6` | Chip button border |
-| `rgba(0,0,0,0.04)` | Card shadow |
-| `rgba(0,0,0,0.12)` | Help balloon/dropdown shadow |
-| `rgba(0,0,0,0.18)` | Toast/extra options shadow |
-| `rgba(0,0,0,0.22)` | Modal/dialog shadow |
-| `rgba(0,0,0,0.35)` | Reset overlay backdrop |
 
-### Spacing
-
-| Element | Value |
-|---|---|
-| Header padding | `12px 16px` |
-| Container padding | `16px`, max-width `1500px`, centered |
-| Card padding | `12px` |
-| Grid gap | `12px` |
-| Row gap | `8px` |
-| Form gap | `10px` |
-| Tab padding | `6px 10px` |
-| Input/select/textarea padding | `10px` |
-| Button padding | `8px 10px` |
-| Label margin-bottom | `6px` |
-| Section margin-top | `12px` |
-| Pill padding | `2px 8px` |
-| Toast position | `fixed; right: 16px; bottom: 16px` |
-| Toast padding | `10px 12px` |
-| Summary table cell padding | `6px 8px` |
-
-### Borders and Radii
-
-| Element | Border | Radius |
-|---|---|---|
-| Card | `1px solid var(--border)` | `10px` |
-| Inputs/selects/textarea | `1px solid var(--border)` | `8px` |
-| Buttons | `1px solid var(--border)` | `8px` |
-| Primary button | `1px solid var(--primary)` | `8px` |
-| Tabs (pill-style) | `1px solid var(--border)` | `999px` |
-| Active tab | `1px solid var(--primary)` | `999px` |
-| Pills | `1px solid var(--border)` | `999px` |
-| Help balloon | `1px solid var(--border)` | `10px` |
-| Toast | `1px solid var(--border)` | `10px` |
-| Modal windows | `1px solid var(--border)` | `12px` |
-| Filter panel | `1px solid var(--border)` | `10px` |
-| Chip buttons | `1px solid #c9d8e6` | `999px` |
-| `code.inline` | `1px solid #e5e7eb` | `6px` |
-
-### Shadows
-
-| Element | Value |
-|---|---|
-| Header | `inset 0 -1px 0 rgba(255,255,255,0.18)` |
-| Card | `0 1px 2px rgba(0,0,0,0.04)` |
-| Help balloon | `0 8px 24px rgba(0,0,0,0.12)` |
-| Toast | `0 10px 25px rgba(0,0,0,0.18)` |
-| Modal windows | `0 20px 40px rgba(0,0,0,0.22)` |
-| Filter panel | `0 12px 28px rgba(0,0,0,0.16)` |
-| Dropdown menus | `0 4px 12px rgba(0,0,0,0.12)` |
-
-### Layout
-
-- Global: `* { box-sizing: border-box }`, `body { margin: 0; scrollbar-gutter: stable }`
-- Container: `max-width: 1500px; margin: 0 auto; padding: 16px`
-- Header: `position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 12px`
-- Main grid: `1fr` then `1fr 1fr` at `>=1100px`
-- Form grid: `1fr` then `1fr 1fr` at `>=720px`
-- Card: `min-height: 420px; overflow: clip`
-- Textarea: `min-height: 340px; resize: vertical`
-
-Responsive breakpoints:
-- `720px` — form two-column
-- `900px` — filter panel two-column
-- `980px` — extra options two-column
-- `1100px` — main grid two-column
-
-### Form Controls
-
-| Control | Padding | Font | Background |
-|---|---|---|---|
-| `input, select` | `10px` | `14px var(--sans)` | `#fff` |
-| `textarea` | `10px` | `12px var(--mono)`, lh `1.35` | `#fff` |
-| `button` | `8px 10px` | `400 weight` | `#fff` |
-| `button.primary` | `8px 10px` | `400 weight` | `var(--primary)`, text `#fff` |
-| `button.danger` | `8px 10px` | `400 weight` | `#fff`, text `var(--danger)` |
-| Disabled state | — | — | `opacity: 0.55; cursor: not-allowed` |
-
-All inputs/selects/textareas are `width: 100%`.
-
-### Component Patterns
-
-- **Card**: White bg, rounded 10px, 1px border, subtle shadow, min-height 420px.
-- **Tabs** (pill-style): Horizontal scroll, fully rounded (`999px`), active tab has primary border + blue text on `#eef2ff` bg.
-- **Toast**: Fixed bottom-right, dark bg (`#111827`), slides up with `opacity .18s ease, transform .18s ease`.
-- **Modal / expanded view**: Fixed `inset: 12px`, full-screen overlay, rounded 12px, heavy shadow.
-- **Filter panel**: Absolutely positioned dropdown, focus-trapped, with OK/Cancel actions.
-- **Pills**: Inline-block, rounded `999px`, variants: default (gray), `.warn` (yellow `#fff7e6`/`#f3d08b`), `.ok` (green `#ecfdf3`/`#b7e3c4`).
-- **Button group**: Adjacent buttons with collapsed borders, first/last get outer radii.
-- **Summary table**: `table-layout: fixed; width: 100%; border-collapse: collapse`, `th` bg `#f8f8f8`.
-
-### Z-index Layers
-
-| z-index | Element |
-|---|---|
-| `2` | Copy button overlay inside textarea |
-| `30` | Help balloon |
-| `40` | Size filter panel |
-| `50` | Dropdown menu |
-| `90` | Extra options panel |
-| `100` | Sticky header |
-| `110` | Expanded JSON modal |
-| `9999` | Toast, reset overlay |
-| `10001` | Deploy flow inline |
-
-### Theme
-
-Single light theme only. No dark mode, custom scrollbar styling, or print styles.
+---
 
 ## Keyboard Navigation and Accessibility
 
-This section documents every keyboard shortcut, focus management pattern, ARIA attribute, and screen reader feature. Follow these conventions when adding new components.
+Every interactive element in `dev/test-lab-builder.html` must be fully operable with keyboard only.
 
 ### Escape Key — Cascade Priority
 
-The global `Escape` handler fires in this order. Each step checks if the component is open before acting. The grading expanded window returns early; all others continue down the chain.
+A single global `Escape` handler fires in priority order. Each step checks whether the component is open before acting. Add new entries at the appropriate priority when creating overlays or panels.
 
 | Priority | Component | Action |
 |---|---|---|
-| 1 | Size filter panel (local trap) | Closes panel, returns focus to trigger button |
-| 2 | Reset confirmation overlay (temporary handler) | Dismisses overlay, removes itself |
-| 3 | JSON flow window | Closes expanded JSON view |
-| 4 | VM Summary flow window | Closes expanded summary view |
-| 5 | Grading expanded window | Closes expanded playbook view, **returns early** |
-| 6 | Grading flow window | Closes grading designer, returns focus to trigger button |
-| 7 | Extra options panel | Closes panel, saves state |
-| 8 | Filter panel (fallback) | Closes if still open |
-| 9 | Help balloon | Hides balloon, sets `aria-hidden="true"` |
+<!-- Fill in as components are built. Example:
+| 1 | Modal dialog | Closes modal, returns focus to trigger button |
+| 2 | Dropdown menu | Closes menu, returns focus to toggle |
+| 3 | Tooltip / balloon | Hides, sets `aria-hidden="true"` |
+-->
 
 ### Enter Key
 
 | Context | Action |
 |---|---|
-| Reset confirmation overlay | Confirms reset: clears `localStorage` and reloads page |
+<!-- Fill in as components are built. Example:
+| Confirmation dialog focused | Confirms action |
+| Search input focused | Submits search |
+-->
 
 ### Tab Key — Focus Trapping
 
 | Component | Behavior |
 |---|---|
-| Size filter panel | `Tab`/`Shift+Tab` cycles between first and last focusable element inside the panel. Focusable selector: `select, button, input, [tabindex]:not([tabindex="-1"])` |
-| Grading flow window | Same focus-trap pattern. Focusable selector: `input, select, textarea, button, [tabindex]:not([tabindex="-1"])` filtered by `!el.disabled && el.offsetParent !== null` |
+<!-- Fill in as components are built. Example:
+| Modal dialog | `Tab`/`Shift+Tab` cycles between first and last focusable element inside the modal |
+-->
 
-### Arrow Keys / Home / End
+### Arrow Keys
 
 | Component | Keys | Behavior |
 |---|---|---|
-| VM tab bar (`role="tablist"`) | `ArrowRight` / `ArrowLeft` | Cycle through VM tabs with wrap-around |
-| VM tab bar | `Home` | Jump to first tab |
-| VM tab bar | `End` | Jump to last tab |
-
-After arrow navigation, the new tab is rendered and receives `.focus()`.
+<!-- Fill in as components are built. Example:
+| Tab bar (`role="tablist"`) | `ArrowRight` / `ArrowLeft` | Cycle through tabs with wrap-around |
+-->
 
 ### Click-Outside-to-Close
 
 | Component | Mechanism |
 |---|---|
-| Help balloon | Global `document` click listener — if target is not inside `.help-wrap`, closes and sets `aria-hidden="true"` |
-| Reset confirmation | Overlay `onclick` — if `e.target` is the backdrop itself, removes the overlay |
+<!-- Fill in as components are built. Example:
+| Dropdown menu | Global `document` click listener — if target is not inside `.menu-wrap`, closes menu |
+-->
 
 ### Focus Management Rules
 
 | Pattern | Details |
 |---|---|
-| **Roving tabindex on VM tabs** | Active tab gets `tabIndex = 0`, all others `-1`. Arrow keys update active index, re-render, and call `.focus()` on new tab. |
-| **Dialog open** | On open, find first focusable element inside the dialog and call `.focus()`. |
-| **Dialog close** | On close, return focus to the button that triggered the dialog (e.g., filter panel returns to `#addSizeFilterBtn`, grading returns to `#openGradingFlowBtn`). |
-| **Add item** | After adding a new item (e.g., grading check), focus the first input inside the newly added card. |
+| **Dialog open** | On open, find the first focusable element inside the dialog and call `.focus()`. |
+| **Dialog close** | On close, return focus to the button or element that triggered the dialog. |
+| **Add item** | After dynamically adding an item (e.g., a new card or row), focus the first input inside the new element. |
 | **Confirmation dialog** | After building the overlay, focus the confirm button. |
+| **Roving tabindex** | For tab-like patterns: active item gets `tabIndex = 0`, all others `-1`. Arrow keys update active index and call `.focus()`. |
 
-### ARIA Attributes Used
+### ARIA Attributes
 
 | Attribute | Where | Purpose |
 |---|---|---|
-| `role="tablist"` | `#tabs` div | VM tab bar container |
-| `role="tab"` | Each VM tab button | Individual tab semantics |
-| `aria-selected` | Each VM tab button | `"true"` on active, `"false"` on inactive |
-| `role="dialog"` | Help balloon, filter panel, JSON flow, VM summary flow, grading flow, grading expanded | Dialog semantics |
-| `aria-modal="true"` | Filter panel, JSON flow, VM summary flow, grading flow, grading expanded | Marks as modal |
-| `aria-label` | All dialogs, maximize/minimize buttons | Descriptive label for screen readers |
-| `aria-hidden` | Help balloon, share field wrappers, control VM lock overlay | Toggled on show/hide |
-| `aria-controls` | Extra options toggle button | Points to `extraOptionsPanel` |
-| `aria-expanded` | Extra options toggle button | `"true"` / `"false"` |
-| `aria-live="polite"` | `#sizeFilterLive`, `#deployFlowInline`, `#toast` | Live region for screen reader announcements |
-| `aria-atomic="true"` | Same as above | Entire region is announced on change |
-| `tabindex="-1"` | Grading flow/expanded windows, inactive VM tabs | Programmatically focusable but not in tab order |
-| `tabindex="0"` | Active VM tab | In natural tab order |
+| `role="dialog"` | Modal overlays, panels | Dialog semantics |
+| `aria-modal="true"` | Modal overlays | Marks as modal |
+| `aria-label` | Dialogs, icon-only buttons | Descriptive label for screen readers |
+| `aria-hidden` | Hidden content | Toggled on show/hide |
+| `aria-expanded` | Toggle buttons | `"true"` / `"false"` |
+| `aria-controls` | Toggle buttons | Points to the controlled panel's `id` |
+| `aria-live="polite"` | Status regions | Live region for screen reader announcements |
+| `aria-atomic="true"` | Status regions | Entire region is announced on change |
+| `role="tablist"` / `role="tab"` | Tab bars | Tab navigation semantics |
+| `aria-selected` | Tab buttons | `"true"` on active, `"false"` on inactive |
+| `tabindex="-1"` | Inactive tabs, programmatic targets | Focusable via JS but not in tab order |
+| `tabindex="0"` | Active tab, custom focusable elements | In natural tab order |
 
 ### Screen Reader Support
 
 | Feature | Element | Details |
 |---|---|---|
-| `.sr-only` CSS class | Various | Visually hidden: `position:absolute; width:1px; height:1px; clip:rect(0,0,0,0)` |
-| Filter result count | `#sizeFilterLive` | `aria-live="polite"` region announces e.g. *"3 of 45 VM sizes match current filters."* |
-| Deploy flow messages | `#deployFlowInline` | `aria-live="polite"` region |
-| Toast notifications | `#toast` | `aria-live="polite"` region, announced automatically |
+| `.sr-only` CSS class | Various | Visually hidden: `position:absolute; width:1px; height:1px; clip:rect(0,0,0,0); overflow:hidden` |
+| Status announcements | `aria-live` regions | Dynamic updates announced automatically |
 
-### Header Buttons
+### Rules for New Components
 
-The sticky header contains the app title on the left and action buttons on the right inside a `.help-wrap` container. All header buttons share a translucent "ghost" style to sit on the blue `--headerBg` background.
+1. Every overlay or dialog must close on `Escape` — add it to the cascade table with the correct priority.
+2. Modal dialogs must trap `Tab`/`Shift+Tab` between the first and last focusable elements inside.
+3. On dialog open, focus the first focusable element. On close, return focus to the trigger.
+4. Use `role="dialog"` and `aria-modal="true"` for modals; always include an `aria-label`.
+5. Toggle buttons need `aria-expanded` and `aria-controls` on the trigger.
+6. Dynamic status updates must write to an `aria-live="polite" aria-atomic="true"` region.
+7. Tab-like navigation must use `role="tablist"/"tab"`, `aria-selected`, and roving `tabindex`.
+8. Visually hidden text for screen readers must use `.sr-only`, never `display:none` (which hides from assistive tech too).
+9. All interactive elements must be reachable and operable via keyboard alone — no mouse-only interactions.
 
-| Button | ID | Label | Purpose |
-|---|---|---|---|
-| Extra options | `#toggleExtraOptionsBtn` | `Extra options` | Opens the Extra Options panel (network config, storage toggles, NSG rules). Uses `aria-controls="extraOptionsPanel"` and `aria-expanded`. |
-| Help | `#helpBtn` | `Help` | Toggles the help balloon dropdown with feature/usage summary. |
+---
 
-**Shared ghost-button style** (applies to both `#helpBtn` and `#toggleExtraOptionsBtn`):
+## Conventions
 
-| Property | Value |
-|---|---|
-| Border | `1px solid rgba(255,255,255,0.45)` |
-| Background | `rgba(255,255,255,0.14)` |
-| Background (hover) | `rgba(255,255,255,0.22)` |
-| Color | `#fff` |
-| Font size | `10px` |
-| Padding | `3px 6px` |
-| Border radius | `8px` (inherited from base button) |
-
-**Extra options active state** (`aria-expanded="true"`): `border-color: #ffffff; background: rgba(255,255,255,0.30)`.
-
-**Help balloon** (`.help-balloon`): Absolute dropdown positioned below the header (`top: calc(100% + 8px); right: 0`), width `min(520px, 90vw)`, white bg, `10px` radius, `z-index: 30`, `0 8px 24px rgba(0,0,0,0.12)` shadow. Toggled via `.show` class. Inner content: `h4` at `14px/700`, `ul` with `margin: 0 0 0 16px`, `li` with `4px` vertical margin, body at `13px/400/1.45`.
+- **No hardcoded credentials** — use interactive prompts or SSH keys.
+- **No example passwords** in docs — use `<your-secure-password>` placeholder.
+- **GRUB regeneration** — always prefix with `GRUB_DISABLE_OS_PROBER=true`.
+- **Boot mode detection** — use `$efi_part_path` (non-empty = EFI), never `/sys/firmware/efi`.
+- **arm64 is always EFI** — no BIOS mode for aarch64 in Azure.
+- **EFI grub.cfg** must be a redirect shim — `configfile` for RHEL/Debian/Ubuntu, `source` for SUSE.
+- **Hyper-V drivers** — skip `--add-drivers` when modules are built-in; check `modules.builtin` at runtime.
+- **Serial TTY** — `ttyS0` for x86_64, `ttyAMA0` for aarch64.

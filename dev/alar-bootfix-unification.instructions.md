@@ -5,7 +5,7 @@
 **Repository**: ALAR (Azure Linux Auto Recover)
 
 For how ALAR works, environment variables, supported distros, and design rules,
-see `dev/AI_WORKFLOW.md`. This document focuses on the bootfix unification project.
+see `.github/copilot-instructions.md`. The sections below focus specifically on the bootfix unification project.
 
 ---
 
