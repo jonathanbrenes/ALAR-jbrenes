@@ -1,22 +1,67 @@
 # ALAR2 — AI Workflow Guide
 
-Use this file as mandatory guidance for any AI session working on ALAR.
-Load `dev/vm-data-consolidated.json` for complete context from 148 Azure VM images.
-Known bugs and enhancements are tracked in `dev/backlog.md`.
-
-### How to load this in a new AI session
+## Starter Prompt (Quick Copy/Paste)
 
 Use this as the first message in Copilot Chat (or any AI agent):
 
 ```text
-Use `dev/ai-workflow.md` as mandatory guidance for this session.
+Use `dev/AI_WORKFLOW.md` as mandatory guidance for this session.
 Also load `dev/vm-data-consolidated.json` for full VM reference data.
 Check `dev/backlog.md` before making any changes.
 ```
 
+ROLE:
+
+- You are a senior systems engineer working on ALAR (Azure Linux Auto Recover).
+- You write minimal, idiomatic, production-quality shell scripts and Rust code.
+- You prefer safe APIs and surgical changes.
+
+RULES:
+
+1. Apply only minimal, surgical changes. Preserve current behavior unless explicitly requested.
+2. No hardcoded credentials or example passwords in any file. Use `<your-secure-password>` placeholder in docs.
+3. Always use the WSL terminal session for git and shell operations.
+4. Before any commit, run `git diff --stat`, show the proposed commit message, and ask for approval.
+5. After commit, ask separately whether to push.
+6. If a request is ambiguous, ask 1-3 clarifying questions before editing.
+7. Do not refactor unrelated sections or add features beyond what was asked.
+8. Always prefix `grub2-mkconfig` and `update-grub` with `GRUB_DISABLE_OS_PROBER=true`.
+9. Use `$efi_part_path` (non-empty = EFI) for boot mode detection — `/sys/firmware/efi` reflects the rescue VM, not the broken disk.
+10. When listing VM images in tables or reports, sort by Publisher first, then by Offer/SKU.
+
+REFERENCES:
+
+- `dev/AI_WORKFLOW.md` — project conventions, distro reference, design system
+- `dev/backlog.md` — known bugs and enhancements (23+ items)
+- `dev/vm-data-consolidated.json` — raw data from 148 Azure VM images
+- `dev/alar-bootfix-unification.instructions.md` — bootfix project plan
+- `README.md` — user-facing documentation
+
+When finished, provide: what changed, validation steps, and any risks.
+
 ---
 
-## What is ALAR?
+## Quick Do / Don't
+
+**Do**
+
+- Check `dev/backlog.md` before modifying any action script.
+- Use the distro tables in this file for correct commands, paths, and packages.
+- Test with `dev/test-action.sh --dry-run` on a matching VM before live runs.
+- Review diffs before committing.
+
+**Don't**
+
+- Don't refactor unrelated sections.
+- Don't combine multiple large requests in one prompt.
+- Don't hardcode passwords or credentials anywhere.
+- Don't add features, comments, or type annotations beyond what was requested.
+- Don't use `/sys/firmware/efi` for boot mode detection (it reflects the rescue VM).
+- Don't omit `GRUB_DISABLE_OS_PROBER=true` from any `grub2-mkconfig` or `update-grub` call.
+
+---
+
+## Project Overview
 
 ALAR (Azure Linux Auto Recover) recovers non-bootable Azure Linux VMs by running
 repair actions inside a chroot on the broken VM's disk.
@@ -40,9 +85,9 @@ repair actions inside a chroot on the broken VM's disk.
 
 ---
 
-## Repository Structure
+## Architecture
 
-```
+```text
 src/action_implementation/   # Shell scripts — the actual recovery logic
   grubfix-impl.sh            # Gen1/BIOS boot repair
   efifix-impl.sh             # Gen2/EFI boot repair
@@ -203,14 +248,193 @@ Boot mode: use `$efi_part_path` (non-empty = EFI) as primary signal, `/sys/firmw
 
 ---
 
-## Session Rules
+## Git Workflow Rules
 
-- Before any commit, run `git diff --stat` to review changes, then show the exact proposed commit message and ask for approval
-- After approval and commit, ask separately whether to push
-- Update `dev/README.md` only for major behavior/workflow changes
-- When outputting markdown content for commits or pull requests, present it inside a fenced `text` code block
-- When listing VM images in tables or reports, always sort by Publisher first, then by Offer/SKU
-- All files under `dev/` must be UTF-8 without BOM. Before committing, verify no BOM is present (first 3 bytes must not be `EF BB BF`)
+These rules apply to all git operations in this repository.
+
+### Commit Process
+
+- Before any commit, run `git diff --stat` to review changes.
+- Show the exact proposed commit message and ask for approval before committing.
+- After approval and commit, ask separately whether to push.
+- When outputting markdown content for commits or pull requests, present it inside a fenced `text` code block.
+
+### Commit Message Format
+
+- Use a short subject line (50 chars or less).
+- If a body is needed, separate it from the subject with a blank line.
+- Use bullet points in the body for multiple changes.
+- If the commit message is longer than a simple one-liner, write it to a temporary file (e.g., `.commit_msg.md`) and commit with `git commit -F .commit_msg.md`.
+- Delete the temporary file after the commit succeeds.
+
+### Terminal
+
+- Always use the WSL terminal session for git operations.
+- Use `/mnt/c/Users/<username>/...` paths (not `~/Repos/`).
+
+### Project-Specific Rules
+
+- Update `dev/README.md` only for major behavior/workflow changes.
+- When listing VM images in tables or reports, always sort by Publisher first, then by Offer/SKU.
+- All files under `dev/` must be UTF-8 without BOM. Before committing, verify no BOM is present (first 3 bytes must not be `EF BB BF`).
+
+### `.gitattributes` Rules
+
+Every repository must include a `.gitattributes` file. Use this baseline plus project-specific extensions:
+
+```text
+# Normalize all text files to LF (Linux targets)
+* text=auto eol=lf
+
+# Force LF for common text formats
+*.sh text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.conf text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.py text eol=lf
+
+# Rust-specific
+*.rs text eol=lf
+*.toml text eol=lf
+
+# Shell helpers
+*.awk text eol=lf
+
+# Force CRLF for Windows-only scripts
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary files — do not normalize
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.7z binary
+```
+
+### `.gitignore` Rules
+
+Every repository must include a `.gitignore` file. Use this baseline and add project-specific patterns:
+
+```text
+# Editor and IDE
+.vscode/
+.idea/
+*.suo
+*.user
+.vs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*~
+.commit_msg.md
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Rust
+target/
+**/*.rs.bk
+Cargo.lock
+
+# Logs
+*.log
+```
+
+---
+
+## Markdown Style Rules
+
+Follow these conventions in all `.md` files in this project.
+
+### Headings
+
+- One `#` (H1) per file as the document title.
+- `##` (H2) for top-level sections, `###` (H3) for subsections. Use `####` (H4) only for numbered step-by-step detail within feature specs.
+- No trailing punctuation on headings.
+- One blank line before and after every heading.
+
+### Lists
+
+- Use `-` for unordered lists (never `*` or `+`).
+- Use `1. 2. 3.` for ordered lists.
+- Compact style: no blank lines between items within a list.
+- One blank line before and after a list block.
+- End list items with a period when they are full sentences; omit for fragments.
+
+### Code
+
+- Wrap filenames, variable names, function names, CLI commands, and config keys in inline backticks.
+- Use fenced code blocks with a language tag for multi-line examples: `bash`, `text`, `json`, `yaml`, `powershell`.
+- Never use a bare fenced block without a language tag.
+
+### Tables
+
+- Pipe-delimited: `| Header | Header |`.
+- Separator row uses hyphens only: `|---|---|`.
+- One blank line before and after every table.
+- Keep cells concise; use backticks for code within cells.
+
+### Emphasis
+
+- Use `**bold**` for key concepts being introduced or emphasized.
+- Prefer backticks over bold for technical terms.
+- Avoid italic; use backticks or bold instead.
+
+### Links
+
+- Always use inline format: `[Display Text](URL)`.
+- No bare URLs.
+- Internal anchor links use lowercase-hyphenated IDs.
+
+### Spacing and Whitespace
+
+- Single blank line between sections, after headings, and around tables/code blocks.
+- No double-blank-line gaps.
+- No trailing whitespace on any line.
+- Semantic line breaks (content-driven wrapping); no hard line-length limit.
+
+### Files
+
+- All files must be UTF-8 without BOM.
+- One H1 title per file.
+- End every file with a single trailing newline.
+
+---
+
+## Conventions
+
+- **No hardcoded credentials** — use interactive prompts or SSH keys.
+- **No example passwords** in docs — use `<your-secure-password>` placeholder.
+- **GRUB regeneration** — always prefix with `GRUB_DISABLE_OS_PROBER=true`.
+- **Boot mode detection** — use `$efi_part_path` (non-empty = EFI), never `/sys/firmware/efi`.
+- **arm64 is always EFI** — no BIOS mode for aarch64 in Azure.
+- **EFI grub.cfg** must be a redirect shim — `configfile` for RHEL/Debian/Ubuntu, `source` for SUSE.
+- **Hyper-V drivers** — skip `--add-drivers` when modules are built-in; check `modules.builtin` at runtime.
+- **Serial TTY** — `ttyS0` for x86_64, `ttyAMA0` for aarch64.
 
 
 ## Visual Design System (Frontend Reference)

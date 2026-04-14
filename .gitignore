@@ -1,6 +1,23 @@
 # Prerequisites
 *.d
 
+# Editor and IDE
+.vscode/
+.idea/
+*.suo
+*.user
+.vs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*~
+.commit_msg.md
+
 # Object files
 *.o
 *.ko
@@ -52,3 +69,21 @@ Mkfile.old
 dkms.conf
 
 target/*
+
+# Rust
+**/*.rs.bk
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Logs
+*.log

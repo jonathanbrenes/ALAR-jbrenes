@@ -176,7 +176,7 @@ python dev/merge-vm-data.py results.json --dry-run
 
 ## Reference Documents
 
-### ai-workflow.md
+### AI_WORKFLOW.md
 
 **Start here.** Complete AI workflow guide for any agent working on ALAR.
 Covers how ALAR works, repository structure, environment variables, supported
